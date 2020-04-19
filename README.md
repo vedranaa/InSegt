@@ -1,5 +1,4 @@
 # InSegt
- Interactive segmentation
 
 Code accompanying our paper Content-based Propagation of User Markings for Interactive Segmentation of Patterned Images. 
 
