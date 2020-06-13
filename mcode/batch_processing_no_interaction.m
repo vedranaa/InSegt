@@ -22,9 +22,15 @@ dictionary = update_dictionary(dictionary,gui_dictprob);
 
 % processing all images
 figure
+subplot(2,6,1)
+imagesc(im,[0,255]), axis image, title('Input image')
+subplot(2,6,7)
+imagesc(labeling,[0,nr_labels]), axis image, title('Input label')
 for i=1:5
     I = imread(['../data/slice',num2str(i),'.png']);
     S = process_image(I,dictionary);
-    subplot(1,5,i)
-    imagesc(S,[0,nr_labels]), axis image, title(i), drawnow
+    subplot(2,6,1+i)
+    imagesc(I,[0,255]), axis image, title(sprintf('Org. image %d', i))
+    subplot(2,6,7+i)
+    imagesc(S,[0,nr_labels]), axis image, title(sprintf('Seg. image %d', i)), drawnow
 end
