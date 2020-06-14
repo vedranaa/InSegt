@@ -22,6 +22,7 @@ image_texture_gui(im,dictionary,3)
 dictionary = update_dictionary(dictionary,gui_dictprob);
 %%
 figure, imagesc(gui_S), axis image, title('results from gui')
+%%
 
 figure
 for i=1:5
