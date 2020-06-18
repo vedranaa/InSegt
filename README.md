@@ -4,9 +4,9 @@ Code accompanying our paper [*Content-based Propagation of User Markings for Int
 
 Our interactive segmentation will, guided by the image content, propagate user markings to similar structures in the rest of the image. This allows easy segmentation of complex structures. For example, see how we obtain the segmentation in the image below using just a few markings. The image is a slice from &mu;CT scan of a bee eye. On the left, the input image is given a small subset of manually marked pixels. On the right, the manual labelling is being propagated to the whole image.
 
-<img src="/images/bee_eye_segmentation.gif" width = "600">
+<img src="/images/bee_eye_segmentation.gif" width = "650">
 
 In addition we have two examples of fibre detection in a composite material shown below.
 
-<img src="/images/glass_example.png" width="600">\
-<img src="/images/carbon_example.png" width="600">
+<img src="/images/glass_example.png" width="650">\
+<img src="/images/carbon_example.png" width="650">
