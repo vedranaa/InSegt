@@ -9,7 +9,7 @@ import PyQt5.QtGui
 
 # Todo: circular cursor indicating pen width, check QCursor
 # Resizing preserving aspect ratio, check QWidget.setSizePolicy
-# Zooming in check QWidged.canvas.setFocusPolicy
+# Zooming-in, check QWidged.canvas.setFocusPolicy
 
 # colors associated with different labels
 def color_picker(label=0, opacity=0.5):
