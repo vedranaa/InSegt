@@ -1,4 +1,4 @@
-# InSegt.py
+# InSegt_script.py
 
 This is a simplistic py version of InSegt.
 
