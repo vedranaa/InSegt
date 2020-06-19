@@ -9,5 +9,5 @@ The differences compared to (full interactive) matlab version:
 * Uses minibatch k-means from sklearn for clustering (in matlab we use k-means tree implemented in C++ and compiled as mex file)
 * Treatment of unlabeled pixels (in matlab I distribute the probabilities to all classes if a pixel is unlabeled, and in python I keep zeros -- need to figure out what's best, and whether it matters). 
 
-Using inSegt.py for detecting fibres can be seen below.
+See below the segmentation computed by inSegt_script.py, given an image and labels. 
 <img src="example_output.png" width = "650">
