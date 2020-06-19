@@ -1,6 +1,6 @@
 # InSegt_script.py
 
-A simplistic py version of InSegt.
+*A simplistic py version of InSegt*.
 
 The differences compared to (full interactive) matlab version:
 
