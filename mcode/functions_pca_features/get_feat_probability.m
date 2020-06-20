@@ -1,0 +1,16 @@
+function [seg_im, P_im] = get_feat_probability(feat_im, dictionary)
+
+n_patch = size(dictionary.label_dict_prob,2);
+
+P_im = probability_search_features(feat_im, ...
+    dictionary.feat_tree(:,1:n_patch), ...
+    dictionary.label_dict_prob, ...
+    dictionary.options.patch_size,...
+    dictionary.options.branching_factor, ...
+    dictionary.options.normalization);
+
+s_im = sum(P_im,3);
+s_im(s_im <= 0) = 1;
+P_im = P_im./s_im;
+
+[~,seg_im] = max(P_im,[],3);
