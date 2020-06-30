@@ -36,7 +36,7 @@ def printHelp():
     print("   'W' changes view (image, annotation or both)")
     print("   'S' saves annotation")
     print("   'H' prints this help")
-    print('**********************************')
+    print('**********************************')     
   
 class Annotator(PyQt5.QtWidgets.QWidget):
     
@@ -140,7 +140,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         # hint from: https://stackoverflow.com/questions/54045134/pyqt5-gui-cant-be-close-from-spyder
         # should also check: https://github.com/spyder-ide/spyder/wiki/How-to-run-PyQt-applications-within-Spyder
    
-    def saveAnnotation(self):
+    def saveAnnotations(self):
         self.annotation.save('annotations.png', 'png')
     
 if __name__ == '__main__':
