@@ -59,9 +59,9 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         #print('paint event')
         painter_display = PyQt5.QtGui.QPainter(self) # this is painter used for display
         painter_display.setCompositionMode(PyQt5.QtGui.QPainter.CompositionMode_SourceOver)
-        if self.view!=1: # view 0 or 1
+        if self.view!=1: # view 0 or 2
             painter_display.drawPixmap(self.rect(), self.image)
-        if self.view!=2: # view 0 or 2
+        if self.view!=2: # view 0 or 1
             painter_display.drawPixmap(self.rect(), self.annotation)
     
     def setTitle(self):
