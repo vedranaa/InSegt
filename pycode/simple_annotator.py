@@ -93,6 +93,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         #print('mouse press')
         if event.button() == PyQt5.QtCore.Qt.LeftButton: 
             self.lastDrawPoint = event.pos()
+            self.updateCursorPix(None)
     
     def makePainter(self, pixmap):
         """" Returns scribble painter for a given pixmap. """
@@ -106,9 +107,10 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         return painter_scribble
 
     def updateCursorPix(self, point):
-        self.cursorPix.fill(color_picker(label=0))    
-        painter_scribble = self.makePainter(self.cursorPix)
-        painter_scribble.drawPoint(point)     
+        self.cursorPix.fill(color_picker(label=0))
+        if point is not None:
+            painter_scribble = self.makePainter(self.cursorPix)
+            painter_scribble.drawPoint(point)     
 
     def mouseMoveEvent(self, event):
         #print('mouse move event')
@@ -152,12 +154,18 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         # print(f'key {event.key()}, text {event.text()}') 
         if 47<event.key()<58: #numbers 0 (48) to 9 (57)
             self.label = event.key()-48
+            self.updateCursorPix(self.lastCurosrPoint)
+            self.update()
             print(f'   Changed to label {self.label}')
         elif event.key()==16777235: # uparrow          
             self.penWidth = min(self.penWidth+1,50) 
+            self.updateCursorPix(self.lastCurosrPoint)
+            self.update()
             print(f'   Changed pen width to  {self.penWidth}')
         elif event.key()==16777237: # downarrow
             self.penWidth = max(self.penWidth-1,1)
+            self.updateCursorPix(self.lastCurosrPoint)
+            self.update()
             print(f'   Changed pen widht to  {self.penWidth}')
         elif event.key()==83: # s
             self.saveAnnotations()
