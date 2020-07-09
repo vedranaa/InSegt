@@ -104,6 +104,7 @@ class InSegtAnnotator(PyQt5.QtWidgets.QWidget):
         self.segmentation = PyQt5.QtGui.QPixmap(self.image.width(),self.image.height())
         self.segmentation.fill(color_picker(label=0))
         self.segmentation_opacity = 0.2
+        self.show()
         
             
     def paintEvent(self, event):
@@ -120,8 +121,8 @@ class InSegtAnnotator(PyQt5.QtWidgets.QWidget):
             
     def setTitle(self):
         views = {0:'annotation', 1:'segmentation', 2:'both'}
-        self.setWindowTitle(f'L:{self.label}, P:{self.penWidth}, W:{views[self.overlay_view]}')
-
+        self.setWindowTitle(f'L:{self.label}, P:{self.penWidth}, O:{views[self.overlay_view]}. For CL help, hit H')
+    
     def mousePressEvent(self, event):
         #print('mouse press')
         if event.button() == PyQt5.QtCore.Qt.LeftButton: 
@@ -158,13 +159,16 @@ class InSegtAnnotator(PyQt5.QtWidgets.QWidget):
             self.lastPoint = event.pos()
             self.transformLabels()
             self.update()            
-            
+   
+    def heightForWidth(self, w):
+        return w * self.image.height()/self.image.width()
+         
     def resizeEvent(self, event):
-        """ Handles resizing of the widget window. """
-        self.scaleWidth = self.image.width()/self.width()
-        self.scaleHeight = self.image.height()/self.height()      
-        #print(f'scaling {self.scaleWidth}, sy {self.scaleHeight}')          
-    
+        """ Triggered by resizing of the widget window. """
+        # this does not influence size, is only book-keeping
+        self.scaleWidth = self.image.width()/self.width() 
+        self.scaleHeight = self.image.height()/self.height()             
+     
     def keyPressEvent(self, event):
         #print(f'key {event.key()}, text {event.text()}') 
         if 47<event.key()<58: #numbers 0 (48) to 9 (57)
@@ -245,7 +249,6 @@ if __name__ == '__main__':
     
     app = PyQt5.QtWidgets.QApplication(sys.argv) 
     ex = InSegtAnnotator(image, processing_function)
-    ex.show()
     print("Starting annotator. For help, hit 'H'")
     sys.exit(app.exec_())  
     

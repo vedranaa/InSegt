@@ -42,27 +42,48 @@ class Annotator(PyQt5.QtWidgets.QWidget):
     
     def __init__(self,filename):
         super().__init__() 
-        self.image = PyQt5.QtGui.QPixmap(filename)
-        self.resize(self.image.width(), self.image.height())
-        self.annotation = PyQt5.QtGui.QPixmap(self.image.width(),self.image.height())
-        self.annotation.fill(color_picker(label=0, opacity=0.5))
+        
+        self.imagePix = PyQt5.QtGui.QPixmap(filename)
+        self.annotationPix = PyQt5.QtGui.QPixmap(self.imagePix.width(),self.imagePix.height())
+        self.annotationPix.fill(color_picker(label=0))
+        self.cursorPix = PyQt5.QtGui.QPixmap(self.imagePix.width(),self.imagePix.height())
+        self.cursorPix.fill(color_picker(label=0))    
+        
+        # Atributes for drawing
         self.label = 1
         self.penWidth = 3     
-        self.lastPoint = PyQt5.QtCore.QPoint()
+        self.lastDrawPoint = PyQt5.QtCore.QPoint()
+        
+        # Atributes for displaying
         self.view = 0
         self.opacity = 0.5
         self.setTitle()
         self.setCursor(PyQt5.QtGui.QCursor(PyQt5.QtCore.Qt.CrossCursor))
+        self.lastCurosrPoint = PyQt5.QtCore.QPoint()
+        self.setMouseTracking(True)
+        
+        # Atributes relating to the transformation between widget 
+        # coordinate system and image coordinate system
+        self.scale = 1
+        self.dx = 0
+        self.dy = 0
+        self.target = PyQt5.QtCore.QRect(0,0,self.width(),self.height()) # part of the target being drawn on
+        self.source = PyQt5.QtCore.QRect(0,0,self.imagePix.width(),self.imagePix.height()) # part of the image being drawn
+
+        # Playtime
+        self.resize(self.imagePix.width(), self.imagePix.height())
+        self.show()
+        print("Starting annotator. For help, hit 'H'")
 
     def paintEvent(self, event):
         """ Painter for displaying the content of the widget."""
-        #print('paint event')
         painter_display = PyQt5.QtGui.QPainter(self) # this is painter used for display
         painter_display.setCompositionMode(PyQt5.QtGui.QPainter.CompositionMode_SourceOver)
         if self.view!=1: # view 0 or 2
-            painter_display.drawPixmap(self.rect(), self.image)
+            painter_display.drawPixmap(self.target, self.imagePix, self.source)
         if self.view!=2: # view 0 or 1
-            painter_display.drawPixmap(self.rect(), self.annotation)
+            painter_display.drawPixmap(self.target, self.annotationPix, self.source)
+        painter_display.drawPixmap(self.target, self.cursorPix, self.source)
     
     def setTitle(self):
         views = {0:'both', 1:'annotation', 2:'image'}
@@ -71,44 +92,61 @@ class Annotator(PyQt5.QtWidgets.QWidget):
     def mousePressEvent(self, event):
         #print('mouse press')
         if event.button() == PyQt5.QtCore.Qt.LeftButton: 
-            self.lastPoint = event.pos()
+            self.lastDrawPoint = event.pos()
+    
+    def makePainter(self, pixmap):
+        """" Returns scribble painter for a given pixmap. """
+        painter_scribble = PyQt5.QtGui.QPainter(pixmap)       
+        painter_scribble.setPen(PyQt5.QtGui.QPen(color_picker(self.label, self.opacity), 
+                    self.penWidth/self.scale, PyQt5.QtCore.Qt.SolidLine, 
+                    PyQt5.QtCore.Qt.RoundCap, PyQt5.QtCore.Qt.RoundJoin))
+        painter_scribble.scale(self.scale, self.scale)
+        painter_scribble.translate(-self.dx, -self.dy)
+        painter_scribble.setCompositionMode(PyQt5.QtGui.QPainter.CompositionMode_Source)
+        return painter_scribble
+
+    def updateCursorPix(self, point):
+        self.cursorPix.fill(color_picker(label=0))    
+        painter_scribble = self.makePainter(self.cursorPix)
+        painter_scribble.drawPoint(point)     
 
     def mouseMoveEvent(self, event):
         #print('mouse move event')
         if event.buttons() & PyQt5.QtCore.Qt.LeftButton: # one of buttons pressed and left button
-            
-            painter_scribble = PyQt5.QtGui.QPainter(self.annotation) # this is painter used for drawing        
-            painter_scribble.setPen(PyQt5.QtGui.QPen(color_picker(self.label, self.opacity), 
-                                            self.penWidth*2/(self.scaleWidth+self.scaleWidth), 
-                                PyQt5.QtCore.Qt.SolidLine, 
-                                PyQt5.QtCore.Qt.RoundCap, 
-                                PyQt5.QtCore.Qt.RoundJoin))
-            painter_scribble.scale(self.scaleWidth, self.scaleHeight)
-            painter_scribble.setCompositionMode(PyQt5.QtGui.QPainter.CompositionMode_Source)
-            painter_scribble.drawLine(self.lastPoint, event.pos())
-            self.lastPoint = event.pos()
+            painter_scribble = self.makePainter(self.annotationPix) # this is painter used for drawing        
+            painter_scribble.drawLine(self.lastDrawPoint, event.pos())
+            self.lastDrawPoint = event.pos()
+            self.update()
+        else:
+            self.updateCursorPix(event.pos())
+            self.lastCurosrPoint = event.pos()
             self.update()
     
     def mouseReleaseEvent(self, event):
         #print('mouse release event')
         if PyQt5.QtCore.Qt.LeftButton:
-            painter_scribble = PyQt5.QtGui.QPainter(self.annotation) # this is painter used for drawing        
-            painter_scribble.setPen(PyQt5.QtGui.QPen(color_picker(self.label, self.opacity), 
-                                            self.penWidth*2/(self.scaleWidth+self.scaleWidth), 
-                                PyQt5.QtCore.Qt.SolidLine, 
-                                PyQt5.QtCore.Qt.RoundCap, 
-                                PyQt5.QtCore.Qt.RoundJoin))
-            painter_scribble.scale(self.scaleWidth, self.scaleHeight)
-            painter_scribble.setCompositionMode(PyQt5.QtGui.QPainter.CompositionMode_Source)
-            painter_scribble.drawPoint(self.lastPoint)
-            self.lastPoint = event.pos()
+            painter_scribble = self.makePainter(self.annotationPix) # this is painter used for drawing        
+            painter_scribble.drawPoint(self.lastDrawPoint)
+            self.lastDrawPoint = event.pos()
             self.update()            
             
     def resizeEvent(self, event):
-        """ Handles resizing of the widget window. """
-        self.scaleWidth = self.image.width()/self.width()
-        self.scaleHeight = self.image.height()/self.height()      
-        #print(f'scaling {self.scaleWidth}, sy {self.scaleHeight}')          
+        """ Triggered by resizing of the widget window. """
+        scaleWidth = self.imagePix.width()/self.width()
+        scaleHeight = self.imagePix.height()/self.height()       
+        
+        if scaleWidth < scaleHeight:
+            self.scale = scaleHeight
+            self.dx = (self.width() - self.imagePix.width()/self.scale)/2
+            self.dy = 0
+        else:
+            self.scale = scaleWidth
+            self.dx = 0
+            self.dy = (self.height() - self.imagePix.height()/self.scale)/2
+        
+        self.target = PyQt5.QtCore.QRect(self.dx, self.dy, 
+                            self.width()-2*self.dx, self.height()-2*self.dy)
+        
     
     def keyPressEvent(self, event):
         # print(f'key {event.key()}, text {event.text()}') 
@@ -141,7 +179,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         # should also check: https://github.com/spyder-ide/spyder/wiki/How-to-run-PyQt-applications-within-Spyder
    
     def saveAnnotations(self):
-        self.annotation.save('annotations.png', 'png')
+        self.annotationPix.save('annotations.png', 'png')
     
 if __name__ == '__main__':
     app = PyQt5.QtWidgets.QApplication(sys.argv) 
@@ -150,7 +188,5 @@ if __name__ == '__main__':
     else:
        filename = '../data/glass.png'
     ex = Annotator(filename)
-    ex.show()
-    print("Starting annotator. For help, hit 'H'")
     sys.exit(app.exec_())  
     
