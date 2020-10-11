@@ -1,7 +1,0 @@
-QImage vs. Pixmap
-QImage optimized for I/O and pixel manipulations
-Pixmap optimized for display
-
-QMainWindow vs QWidget
-MainWindow, equipped with manu, toolbar, status-bar, docking options (AND a central widget)
-Widget, just a widget

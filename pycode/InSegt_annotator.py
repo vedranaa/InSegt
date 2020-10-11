@@ -10,10 +10,6 @@ import InSegt
 import skimage.io
 import numpy as np
 
-# Todo: circular cursor indicating pen width, check QCursor
-# Resizing preserving aspect ratio, check QWidget.setSizePolicy
-# Zooming-in, check QWidged.canvas.setFocusPolicy
-
 # colors associated with different labels
 colors = np.array([
     [0, 0, 0, 0], # background, will always be given alpha=0
