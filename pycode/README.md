@@ -1,4 +1,4 @@
-# InSegt_script.py
+# InSegt_without_interatcion.py
 
 *A simplistic py version of InSegt*.
 
