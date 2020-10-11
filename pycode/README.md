@@ -4,19 +4,12 @@
 
 Contains:
 
-* ´insegtbasic.py´, a module providing basic InSegt functionality.
-* ´insegt_without_interaction.py´
-
-
-
-* No interaction! Instead, you load an image and a corresponding image containing the user labeling. (The plan is to make a Qt-based interaction.)
-* For processing uses insegtbasic module.
-
-
+* `insegtbasic.py`, a module providing basic InSegt functionality.
+* `insegt_without_interaction.py`, a script for processing an image using methods from `insegtbasic.py`.
+    ** No interaction! Instead, you load an image and a corresponding image containing the user labeling. 
 See below the segmentation computed by inSegt_script.py, given an image and labels. 
 <img src="example_output.png" width = "650">
 
-## insegtbasic
 
 
 Purely python basic version of Insegt. Features:  
