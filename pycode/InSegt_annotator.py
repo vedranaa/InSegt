@@ -1,4 +1,4 @@
-""" Image annotator. 
+""" Insegt annotator. 
 Author: vand@dtu.dk, 2020
 """
 
@@ -11,22 +11,22 @@ import skimage.io
 import numpy as np
 
 # colors associated with different labels
-colors = np.array([
-    [0, 0, 0, 0], # background, will always be given alpha=0
-    [255, 0, 0, 255], # label 1
-    [0, 191, 0, 255], # label 2
+colors = [
+    [127, 127, 127], # background, gray
+    [255, 0, 0], # label 1
+    [0, 191, 0], # label 2
     [0, 0, 255, 255], # etc
-    [255, 127, 0, 255],
-    [0, 255, 191, 255],
-    [127, 0, 255, 255],
-    [191, 255, 0, 255],
-    [0, 127, 255, 255],
-    [255, 64, 191, 255]
-    ], dtype=np.uint8) 
+    [255, 127, 0],
+    [0, 255, 191],
+    [127, 0, 255],
+    [191, 255, 0],
+    [0, 127, 255],
+    [255, 64, 191]] 
 
-def color_picker(label=0, opacity=0.5):
-    color = PyQt5.QtGui.QColor(colors[label,0], colors[label,1], 
-            colors[label,2], int(opacity*colors[label,3]))
+def color_picker(label, opacity):
+    opacity_value = int(opacity*255)
+    color = PyQt5.QtGui.QColor(colors[label][0], colors[label][1], 
+            colors[label][2], opacity_value)
     return(color)
 
 def printHelp():
@@ -37,6 +37,8 @@ def printHelp():
     print("   'uparrow' and 'downarrow' changes pen width")
     print("   'O' changes overlay (annotation, segmentation or both)")
     print("   'I' changes background (image or emtpy)")  
+    print("   'Z' hold down allows zoom")
+    print("   'Z' pressed resets zoom")
     print("   'S' saves annotation and segmentation")
     print("   'H' prints this help")
     print('**********************************')    
@@ -156,15 +158,7 @@ class InSegtAnnotator(PyQt5.QtWidgets.QWidget):
             self.transformLabels()
             self.update()            
    
-    def heightForWidth(self, w):
-        return w * self.image.height()/self.image.width()
-         
-    def resizeEvent(self, event):
-        """ Triggered by resizing of the widget window. """
-        # this does not influence size, is only book-keeping
-        self.scaleWidth = self.image.width()/self.width() 
-        self.scaleHeight = self.image.height()/self.height()             
-     
+            
     def keyPressEvent(self, event):
         #print(f'key {event.key()}, text {event.text()}') 
         if 47<event.key()<58: #numbers 0 (48) to 9 (57)
@@ -221,7 +215,7 @@ class InSegtAnnotator(PyQt5.QtWidgets.QWidget):
 if __name__ == '__main__':
     
     """ 
-    To initializing InSegt annotator, you need:
+    To initialize InSegt annotator, you need:
     - A grayscale uint8 image represented as a H-by-W numpy array.
     - A processing function which given a H-by-W labeling returns a H-by-W 
         segmentation, both represented as numpy arrays. Elements of labeling 

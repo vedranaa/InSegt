@@ -9,7 +9,7 @@ import PIL.Image  # using PIL for easier treatment of indexed rgb images
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import InSegt
+import insegtbasic
 
 # %% Pre-processing
     
@@ -25,37 +25,37 @@ nr_clusters = 1000 # number of dictionary clusters
 
 # Preparing for transformation.
 t = time.time()
-assignment = InSegt.image2assignment(image, patch_size, nr_clusters, nr_training_patches)
+assignment = insegtbasic.image2assignment(image, patch_size, nr_clusters, nr_training_patches)
 print(f'Image to assignment: {time.time()-t}')
 t = time.time()
-B = InSegt.assignment2biadjacency(assignment, image.shape, patch_size, nr_clusters)
+B = insegtbasic.assignment2biadjacency(assignment, image.shape, patch_size, nr_clusters)
 print(f'Assignment to biadjacency: {time.time()-t}')
 t = time.time()
-T1, T2 = InSegt.biadjacency2transformations(B)
+T1, T2 = insegtbasic.biadjacency2transformations(B)
 print(f'Biadjacency to transformations: {time.time()-t}')
 
 # %% Incorporating labelings
 
 # Transforming labels into probabilities.
 t = time.time()
-labcol = InSegt.labels2labcol(labels, nr_classes=nr_classes)
+labcol = insegtbasic.labels2labcol(labels, nr_classes=nr_classes)
 probcol = T2*(T1*labcol) # first linear diffusion
 probcol = np.asarray(probcol.todense())
 print(f'Matrix multiplications: {time.time()-t}')
 
 t = time.time()
-labcol = InSegt.probcol2labcol(probcol) # binarizing labels
+labcol = insegtbasic.probcol2labcol(probcol) # binarizing labels
 probcol = T2*(T1*labcol) # second linear diffusion
 probcol = np.asarray(probcol.todense())
 print(f'Second round of matrix multiplications: {time.time()-t}')
 
 t = time.time()
-probabilities = InSegt.probcol2probabilities(probcol, image.shape)
+probabilities = insegtbasic.probcol2probabilities(probcol, image.shape)
 print(f'Probcol to probabilities: {time.time()-t}')
 
 #%% Producing a final segmentation
 
-segmentation = InSegt.probcol2labcol(probcol)*(np.arange(probcol.shape[1])+1) # final segmentation
+segmentation = insegtbasic.probcol2labcol(probcol)*(np.arange(probcol.shape[1])+1) # final segmentation
 segmentation = segmentation.reshape(image.shape)
 
 # Preparing for visualization of probabilities as rgb image.
@@ -75,8 +75,8 @@ ax[0,0].imshow(image, cmap='gray')
 ax[0,0].set_title('image')
 ax[0,1].imshow(a_im)
 ax[0,1].set_title('assignment')
-ax[1,0].imshow(labels, vmin=0, vmax=nr_classes, cmap = InSegt.gray_cool(nr_classes))
+ax[1,0].imshow(labels, vmin=0, vmax=nr_classes, cmap = insegtbasic.gray_cool(nr_classes))
 ax[1,0].set_title('labels')
-ax[1,1].imshow(segmentation, vmin=0, vmax=nr_classes, cmap = InSegt.gray_cool(nr_classes))
+ax[1,1].imshow(segmentation, vmin=0, vmax=nr_classes, cmap = insegtbasic.gray_cool(nr_classes))
 ax[1,1].set_title('segmentation')
 
