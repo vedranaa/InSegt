@@ -14,5 +14,9 @@ Contains:
    - No interaction! Instead, you load an image and a corresponding image containing the user labeling. See below the segmentation computed by inSegt_script.py, given an image and labels. 
 <img src="example_output.png" width = "650">
 
+* `annotator.py`, an annotator class which will be used for interactive insegt. Based on qt5.
+
+* `insegt_annotaotr.py` -- WORKING ON IN!
+
 
 
