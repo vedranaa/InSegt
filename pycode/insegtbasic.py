@@ -38,7 +38,8 @@ def image2assignment(image, patch_size, nr_clusters, nr_training_patches):
     patches = image2patches(image, patch_size)
     patches_subset = patches[:,np.random.permutation(np.arange(patches.shape[1]))
                              [:nr_training_patches]]
-    kmeans = sklearn.cluster.MiniBatchKMeans(n_clusters = nr_clusters, max_iter = 10, batch_size = 3*nr_clusters)
+    kmeans = sklearn.cluster.MiniBatchKMeans(n_clusters = nr_clusters, 
+            max_iter = 10, batch_size = 3*nr_clusters)
     kmeans.fit(patches_subset.T)
     assignment = kmeans.predict(patches.T)
     return assignment.reshape((X-patch_size+1,Y-patch_size+1))
@@ -99,7 +100,10 @@ def probcol2labcol(probcol):
     """ Probability to labels using max approach.  """
     p = np.sum(probcol, axis=1)
     nonempty = p>0
-    l = np.argmax(probcol[nonempty],axis=1)
+    nr_nonempty = np.sum(nonempty)
+    l = np.empty((nr_nonempty,), dtype=np.uint8)  # max 255 labels
+    if nr_nonempty > 0: # argmax can't handle empty labeling
+        np.argmax(probcol[nonempty], axis=1, out=l)
     labcol = scipy.sparse.coo_matrix((np.ones(np.sum(nonempty), dtype=np.bool),
                     (np.where(nonempty)[0], l)),
                     shape=probcol.shape).tocsr()
@@ -107,30 +111,29 @@ def probcol2labcol(probcol):
     
 def gray_cool(nr_classes):
     """ Colormap as in original InSegt """
-    colors = plt.cm.cool(np.linspace(0,1,nr_classes))
-    colors = np.r_[np.array([[0.5, 0.5, 0.5, 1]]),colors]
+    colors = plt.cm.cool(np.linspace(0, 1, nr_classes))
+    colors = np.r_[np.array([[0.5, 0.5, 0.5, 1]]), colors]
     cmap = matplotlib.colors.ListedColormap(colors)
     return cmap 
 
 def patch_clustering(image, patch_size, nr_training_patches, nr_clusters):
     """"InSegt preprocessing function: clustering, assignment and transformations."""
-    assignment = image2assignment(image, patch_size, nr_clusters, nr_training_patches)
+    assignment = image2assignment(image, patch_size,
+            nr_clusters, nr_training_patches)
     B = assignment2biadjacency(assignment, image.shape, patch_size, nr_clusters)
     T1, T2 = biadjacency2transformations(B)
     return T1, T2
 
 def two_binarized(labels, T1, T2):
     """InSegt processing function: from labels to segmentation."""
-    nr_classes = np.max(labels)
-        
+    nr_classes = np.max(labels)    
     labcol = labels2labcol(labels, nr_classes=nr_classes) # columns with binary labels
     probcol = T2*((T1)*labcol) # first linear diffusion
     probcol = np.asarray(probcol.todense()) # columns with probabilities
-
     labcol = probcol2labcol(probcol) # binarizing labels
     probcol = T2*((T1)*labcol) # second linear diffusion
     probcol = np.asarray(probcol.todense())
-
-    segmentation = probcol2labcol(probcol)*(np.arange(probcol.shape[1])+1) # segmentation column
+    segmentation = probcol2labcol(probcol) * \
+            (np.arange(probcol.shape[1], dtype=np.uint8) + 1) # segmentation column, max 255 labels
     segmentation = segmentation.reshape(labels.shape) # numpy height x width 0 to N labels
     return segmentation

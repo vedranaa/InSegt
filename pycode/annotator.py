@@ -33,7 +33,9 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         
         # Atributes for displaying
         self.view = 0
-        self.opacity = 0.5
+        self.views = {0:'both', 1:'annotation', 2:'image'}
+        self.annotationOpacity = 0.5
+        self.cursorOpacity = 0.5
         self.zoomOpacity = 0.5
         self.setTitle()
         self.setCursor(PyQt5.QtGui.QCursor(PyQt5.QtCore.Qt.CrossCursor))
@@ -58,6 +60,8 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         initial_zoom = min(2000/max(self.imagePix.width(), 4*self.imagePix.height()/3),1) # downsize if larger than (2000,1500)
         self.resize(initial_zoom*self.imagePix.width(), initial_zoom*self.imagePix.height())
         self.show()
+        
+        print("#####################################")    
         print("Starting annotator. For help, hit 'H'")    
     
     @classmethod
@@ -68,15 +72,8 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         return annotator
     
     def setTitle(self):
-        views = {0:'both', 1:'annotation', 2:'image'}
-        self.setWindowTitle(f'L:{self.label}, P:{self.penWidth}, W:{views[self.view]}')
-    
-    def annotationOpacity(self):
-        if self.label == 0:
-            return 0
-        else:
-            return self.opacity
-        
+        self.setWindowTitle(f'L:{self.label}, P:{self.penWidth}, W:{self.views[self.view]}')
+            
     def makePainter(self, pixmap, color):
         """" Returns scribble painter operating on a given pixmap. """
         painter_scribble = PyQt5.QtGui.QPainter(pixmap)       
@@ -104,7 +101,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         """Called when cursorPix needs update due to pen change or movement"""
         self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # transparent
         painter_scribble = self.makePainter(self.cursorPix, 
-                    self.color_picker(self.label, self.opacity)) # the painter used for cursor
+                    self.color_picker(self.label, self.cursorOpacity)) # the painter used for cursor
         painter_scribble.drawPoint(point)   
     
     def mousePressEvent(self, event):
@@ -117,7 +114,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
                 self.newZoomValues = 0 # for distinction between reset and cancel
             else: # initiate drawing
                 painter_scribble = self.makePainter(self.annotationPix, 
-                        self.color_picker(self.label, self.annotationOpacity())) # the painter used for drawing        
+                        self.color_picker(self.label, (self.label>0)*self.annotationOpacity)) # the painter used for drawing        
                 painter_scribble.drawPoint(event.pos())
                 self.lastDrawPoint = event.pos()   
                 self.activelyDrawing = True
@@ -137,7 +134,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         else:          
             if self.activelyDrawing: 
                 painter_scribble = self.makePainter(self.annotationPix, 
-                        self.color_picker(self.label, self.annotationOpacity())) # the painter used for drawing        
+                        self.color_picker(self.label, (self.label>0)*self.annotationOpacity)) # the painter used for drawing        
                 painter_scribble.drawLine(self.lastDrawPoint, event.pos())
                 self.lastDrawPoint = event.pos()
             if self.zPressed:
@@ -232,7 +229,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         elif event.key()==83: # s
             self.saveOutcome()
         elif event.key()==87: # w
-            self.view = (self.view+1)%3
+            self.view = (self.view+1)%len(self.views)
             self.update()
             print(f'   Changed view to  {self.view}')
         elif event.key()==72: #h
@@ -307,7 +304,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         print("   '0' eraser mode")
         print("   'uparrow' and 'downarrow' changes pen width")
         print("   'W' changes view (image, annotation or both)")
-        print("   'Z' hold down allows zoom")
+        print("   'Z' held down allows zoom")
         print("   'Z' pressed resets zoom")
         print("   'S' saves annotation")
         print("   'H' prints this help")
