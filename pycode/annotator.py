@@ -2,61 +2,29 @@
 Author: vand@dtu.dk, 2020
 """
 
-import sys
+import sys 
 import PyQt5.QtCore  
 import PyQt5.QtWidgets 
 import PyQt5.QtGui
   
 class Annotator(PyQt5.QtWidgets.QWidget):
     
-    # colors associated with different labels
-    colors = [
-        [127, 127, 127], # background, gray
-        [255, 0, 0], # label 1
-        [0, 191, 0], # label 2
-        [0, 0, 255, 255], # etc
-        [255, 127, 0],
-        [0, 255, 191],
-        [127, 0, 255],
-        [191, 255, 0],
-        [0, 127, 255],
-        [255, 64, 191]] 
-
-    def color_picker(label, opacity):
-        """ Pen colors given for a label number. """
-        opacity_value = int(opacity*255)
-        color = PyQt5.QtGui.QColor(Annotator.colors[label][0], Annotator.colors[label][1], 
-                Annotator.colors[label][2], opacity_value)
-        return(color)
-    
-    def printHelp():
-        print(Annotator.colors)
-        print('******* Help for annotator *******')
-        print('KEYBORD COMMANDS:')
-        print("   '1' to '9' changes label (pen color)")
-        print("   '0' eraser mode")
-        print("   'uparrow' and 'downarrow' changes pen width")
-        print("   'W' changes view (image, annotation or both)")
-        print("   'Z' hold down allows zoom")
-        print("   'Z' pressed resets zoom")
-        print("   'S' saves annotation")
-        print("   'H' prints this help")
-        print('**********************************')  
-   
-    def formatQRect(rect):
-        coords =  rect.getCoords()
-        s = f'({coords[0]},{coords[1]})--({coords[2]},{coords[3]})'
-        return(s)   
-    
-    def __init__(self,filename):
+    def __init__(self, size=None):
+        
         super().__init__() 
         
+        if size is None:
+            size = PyQt5.QtCore.QSize(256,256)
+        elif type(size) is tuple:
+            size = PyQt5.QtCore.QSize(size[0],size[1])
+        
         # Pixmap layers
-        self.imagePix = PyQt5.QtGui.QPixmap(filename) 
-        self.annotationPix = PyQt5.QtGui.QPixmap(self.imagePix.width(),self.imagePix.height())
-        self.annotationPix.fill(Annotator.color_picker(label=0, opacity=0))
-        self.cursorPix = PyQt5.QtGui.QPixmap(self.imagePix.width(),self.imagePix.height())
-        self.cursorPix.fill(Annotator.color_picker(label=0, opacity=0))    
+        self.imagePix = PyQt5.QtGui.QPixmap(size.width(), size.height()) 
+        self.imagePix.fill(Annotator.color_picker(label=0, opacity=0))
+        self.annotationPix = PyQt5.QtGui.QPixmap(self.imagePix.width(), self.imagePix.height())
+        self.annotationPix.fill(self.color_picker(label=0, opacity=0))
+        self.cursorPix = PyQt5.QtGui.QPixmap(self.imagePix.width(), self.imagePix.height())
+        self.cursorPix.fill(self.color_picker(label=0, opacity=0))    
         
         # Atributes for drawing
         self.label = 1
@@ -66,6 +34,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         # Atributes for displaying
         self.view = 0
         self.opacity = 0.5
+        self.zoomOpacity = 0.5
         self.setTitle()
         self.setCursor(PyQt5.QtGui.QCursor(PyQt5.QtCore.Qt.CrossCursor))
         self.lastCursorPoint = PyQt5.QtCore.QPoint()
@@ -89,7 +58,14 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         initial_zoom = min(2000/max(self.imagePix.width(), 4*self.imagePix.height()/3),1) # downsize if larger than (2000,1500)
         self.resize(initial_zoom*self.imagePix.width(), initial_zoom*self.imagePix.height())
         self.show()
-        print("Starting annotator. For help, hit 'H'")
+        print("Starting annotator. For help, hit 'H'")    
+    
+    @classmethod
+    def fromFilename(cls, filename):
+        imagePix = PyQt5.QtGui.QPixmap(filename)
+        annotator = Annotator(imagePix.size())
+        annotator.imagePix = imagePix
+        return annotator
     
     def setTitle(self):
         views = {0:'both', 1:'annotation', 2:'image'}
@@ -126,22 +102,22 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         
     def drawCursorPoint(self, point):
         """Called when cursorPix needs update due to pen change or movement"""
-        self.cursorPix.fill(Annotator.color_picker(label=0, opacity=0)) # transparent
+        self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # transparent
         painter_scribble = self.makePainter(self.cursorPix, 
-                    Annotator.color_picker(self.label, self.opacity)) # the painter used for cursor
+                    self.color_picker(self.label, self.opacity)) # the painter used for cursor
         painter_scribble.drawPoint(point)   
     
     def mousePressEvent(self, event):
         #print('mouse press')
         if event.button() == PyQt5.QtCore.Qt.LeftButton: 
             if self.zPressed: # initiate zooming and not drawing
-                self.cursorPix.fill(Annotator.color_picker(label=0, opacity=0)) # clear (fill with transparent)
+                self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # clear (fill with transparent)
                 self.lastCursorPoint = event.pos()
                 self.activelyZooming = True
                 self.newZoomValues = 0 # for distinction between reset and cancel
             else: # initiate drawing
                 painter_scribble = self.makePainter(self.annotationPix, 
-                        Annotator.color_picker(self.label, self.annotationOpacity())) # the painter used for drawing        
+                        self.color_picker(self.label, self.annotationOpacity())) # the painter used for drawing        
                 painter_scribble.drawPoint(event.pos())
                 self.lastDrawPoint = event.pos()   
                 self.activelyDrawing = True
@@ -150,18 +126,18 @@ class Annotator(PyQt5.QtWidgets.QWidget):
     def mouseMoveEvent(self, event):
         #print('mouse move event')       
         if self.activelyZooming: 
-            self.cursorPix.fill(Annotator.color_picker(label=0, opacity=0)) # clear (fill with transparent)
+            self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # clear (fill with transparent)
             painter_scribble = self.makePainter(self.cursorPix,
-                    Annotator.color_picker(0,0.75))          
+                    self.color_picker(0, self.zoomOpacity))          
             x = min(self.lastCursorPoint.x(), event.x())
             y = min(self.lastCursorPoint.y(), event.y())
             w = abs(self.lastCursorPoint.x() - event.x())
             h = abs(self.lastCursorPoint.y() - event.y())      
-            painter_scribble.fillRect(x,y,w,h,Annotator.color_picker(0,0.75))
+            painter_scribble.fillRect(x,y,w,h,self.color_picker(0, self.zoomOpacity))
         else:          
             if self.activelyDrawing: 
                 painter_scribble = self.makePainter(self.annotationPix, 
-                        Annotator.color_picker(self.label, self.annotationOpacity())) # the painter used for drawing        
+                        self.color_picker(self.label, self.annotationOpacity())) # the painter used for drawing        
                 painter_scribble.drawLine(self.lastDrawPoint, event.pos())
                 self.lastDrawPoint = event.pos()
             if self.zPressed:
@@ -191,7 +167,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
     def leaveEvent(self, event):
         """Removes curser when mouse leaves widget. """
         if not (self.activelyZooming or self.zPressed):
-            self.cursorPix.fill(Annotator.color_picker(label=0, opacity=0)) # clear (fill with transparent)
+            self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # clear (fill with transparent)
             self.update()
             
     def resizeEvent(self, event):
@@ -200,7 +176,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
                 
     def adjustTarget(self):
         """ Computes padding needed such that aspect ratio of the image is correct. """
-        self.cursorPix.fill(Annotator.color_picker(label=0, opacity=0)) # clear (fill with transparent)
+        self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # clear (fill with transparent)
         self.update()   
 
         zoomWidth = self.width()/self.source.width()
@@ -254,19 +230,18 @@ class Annotator(PyQt5.QtWidgets.QWidget):
             self.update()
             print(f'   Changed pen widht to  {self.penWidth}')
         elif event.key()==83: # s
-            self.saveAnnotations()
-            print('   Saved annotations')
+            self.saveOutcome()
         elif event.key()==87: # w
             self.view = (self.view+1)%3
             self.update()
             print(f'   Changed view to  {self.view}')
         elif event.key()==72: #h
-            Annotator.printHelp()
+            self.printHelp()
         elif event.key()==90: # z
             if not self.zPressed:
                 print('   Zooming enabled')
                 self.zPressed = True
-                self.cursorPix.fill(Annotator.color_picker(label=0, opacity=0)) # clear (fill with transparent)
+                self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # clear (fill with transparent)
                 self.update()
         elif event.key()==16777216: # escape
             self.closeEvent(event)
@@ -292,16 +267,64 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         # hint from: https://stackoverflow.com/questions/54045134/pyqt5-gui-cant-be-close-from-spyder
         # should also check: https://github.com/spyder-ide/spyder/wiki/How-to-run-PyQt-applications-within-Spyder
    
-    def saveAnnotations(self):
+    def saveOutcome(self):
         self.annotationPix.save('annotations.png', 'png')
+        print('   Saved annotations')
+        
+    # colors associated with different labels
+    colors = [
+        [0, 0, 0], # background, transparency is always drawn with black
+        [255, 0, 0], # label 1
+        [0, 191, 0], # label 2
+        [0, 0, 255], # etc
+        [255, 127, 0],
+        [0, 255, 191],
+        [127, 0, 255],
+        [191, 255, 0],
+        [0, 127, 255],
+        [255, 64, 191]] 
+
+    @classmethod
+    def color_picker(cls, label, opacity):
+        """ Pen colors given for a label number. """
+        opacity_value = int(opacity*255)
+        color = PyQt5.QtGui.QColor(cls.colors[label][0], cls.colors[label][1], 
+                cls.colors[label][2], opacity_value)
+        return(color)
+    
+    @staticmethod
+    def formatQRect(rect):
+        coords =  rect.getCoords()
+        s = f'({coords[0]},{coords[1]})--({coords[2]},{coords[3]})'
+        return(s) 
+    
+    @classmethod 
+    def printHelp(cls):
+        """Help"""
+        print('******* Help for annotator *******')
+        print('KEYBORD COMMANDS:')
+        print("   '1' to '9' changes label (pen color)")
+        print("   '0' eraser mode")
+        print("   'uparrow' and 'downarrow' changes pen width")
+        print("   'W' changes view (image, annotation or both)")
+        print("   'Z' hold down allows zoom")
+        print("   'Z' pressed resets zoom")
+        print("   'S' saves annotation")
+        print("   'H' prints this help")
+        print('**********************************')  
     
 if __name__ == '__main__':
-    
-    app = PyQt5.QtWidgets.QApplication(sys.argv) 
+       
+    app = PyQt5.QtWidgets.QApplication(sys.argv)
     if len(sys.argv)>1:
-       filename = sys.argv[1]    
+         filename = sys.argv[1]
+         ex = Annotator.fromFilename(filename)
     else:
-       filename = '../data/carbon.png'
-    ex = Annotator(filename)
+         ex = Annotator()
+    # ex = Annotator((1024,512))    
+    # ex = Annotator.fromFilename('../data/carbon.png')
     sys.exit(app.exec_())  
+    
+    
+    
     
