@@ -185,10 +185,10 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         # depending on aspect ratios, either pad up and down, or left and rigth
         if zoomWidth > zoomHeight:
             self.zoomFactor = zoomHeight
-            self.padding = PyQt5.QtCore.QPoint((self.width()-self.source.width()*self.zoomFactor)/2, 0)
+            self.padding = PyQt5.QtCore.QPoint((int(self.width()-self.source.width()*self.zoomFactor)/2), 0)
         else:
             self.zoomFactor = zoomWidth
-            self.padding = PyQt5.QtCore.QPoint(0, (self.height()-self.source.height()*self.zoomFactor)/2)
+            self.padding = PyQt5.QtCore.QPoint(0, int((self.height()-self.source.height()*self.zoomFactor)/2))
             
         self.target = PyQt5.QtCore.QRect(self.padding, self.rect().bottomRight()-self.padding)
                    
