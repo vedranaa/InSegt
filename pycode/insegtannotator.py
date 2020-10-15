@@ -6,11 +6,9 @@ Created on Sun Oct 11 22:42:32 2020
 @author: vand@dtu.dk, 2020
 """
 
-import sys 
 import annotator
 import numpy as np
 import PyQt5.QtCore  
-import insegtbasic
 import skimage.io
 
 class InSegtAnnotator(annotator.Annotator):
@@ -172,25 +170,3 @@ class InSegtAnnotator(annotator.Annotator):
         gray[:,:,3] = 255
         qpixmap = InSegtAnnotator.arrayToPixmap(gray)
         return qpixmap
-        
-
-# loading image
-print('Loading image')
-filename = '../data/glass.png'
-image = skimage.io.imread(filename)           
-
-# defining processing function
-print('Defining processing function')
-patch_size = 9
-nr_training_patches = 10000
-nr_clusters = 100
-T1, T2 = insegtbasic.patch_clustering(image, patch_size, 
-        nr_training_patches, nr_clusters)
-def processing_function(labels):
-    return insegtbasic.two_binarized(labels, T1, T2)
-
-print('Showtime')    
-# showtime
-app = PyQt5.QtWidgets.QApplication(sys.argv) 
-ex = InSegtAnnotator(image, processing_function)
-sys.exit(app.exec_())  
