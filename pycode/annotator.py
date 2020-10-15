@@ -17,10 +17,10 @@ class Annotator(PyQt5.QtWidgets.QWidget):
             size = PyQt5.QtCore.QSize(256,256)
         elif type(size) is tuple:
             size = PyQt5.QtCore.QSize(size[0],size[1])
-        
+            
         # Pixmap layers
         self.imagePix = PyQt5.QtGui.QPixmap(size.width(), size.height()) 
-        self.imagePix.fill(Annotator.color_picker(label=0, opacity=0))
+        self.imagePix.fill(self.color_picker(label=0, opacity=0))
         self.annotationPix = PyQt5.QtGui.QPixmap(self.imagePix.width(), self.imagePix.height())
         self.annotationPix.fill(self.color_picker(label=0, opacity=0))
         self.cursorPix = PyQt5.QtGui.QPixmap(self.imagePix.width(), self.imagePix.height())
@@ -196,7 +196,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
                 self.newZoomValues.size()/self.zoomFactor)
         self.source.translate(-self.offset)
         self.source = self.source.intersected(self.imagePix.rect()) 
-        print('   Zooming to ' + Annotator.formatQRect(self.source))     
+        print('   Zooming to ' + self.formatQRect(self.source))     
         self.offset = self.imagePix.rect().topLeft() - self.source.topLeft()
         self.adjustTarget()
         self.newZoomValues = None
@@ -204,7 +204,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
     def resetZoom(self):
         """ Back to original zoom """
         self.source = PyQt5.QtCore.QRect(0,0,self.imagePix.width(),self.imagePix.height())
-        print(f'   Reseting zoom to ' + Annotator.formatQRect(self.source))        
+        print(f'   Reseting zoom to ' + self.formatQRect(self.source))        
         self.offset = PyQt5.QtCore.QPoint(0,0)
         self.adjustTarget()        
         self.newZoomValues = None

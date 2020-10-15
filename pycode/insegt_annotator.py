@@ -89,23 +89,26 @@ class InSegtAnnotator(annotator.Annotator):
         skimage.io.imsave('annotations_gray.png', 30*labels, check_contrast=False) # 30*8 = 240<255     
         skimage.io.imsave('segmentations_gray.png', 30*labels_segmentation, check_contrast=False)              
         print('   Saved annotations and segmentations in various data types')
+      
+    helpText = (
+        '******** Help for insegt annotator ********' + '\n' +
+        'KEYBORD COMMANDS:' + '\n' +
+        "   '1' to '9' changes label (pen color)" + '\n' +
+        "   '0' eraser mode" + '\n' +
+        "   'uparrow' and 'downarrow' changes pen width" + '\n' +
+        "   'W' changes view (annotation, segmentation, both)" + '\n' +
+        "   'I' held down temporarily removes shown image" + '\n' +
+        "   'Z' held down allows zoom" + '\n' +
+        "   'Z' pressed resets zoom" + '\n' +
+        "   'S' saves annotation and segmentation" + '\n' +
+        "   'H' prints this help" + '\n' +
+        '*******************************************') 
     
     @classmethod
     def printHelp(cls): 
         """Overriding help"""
+        print(cls.helpText)
         
-        print('******* Help for annotator *******')
-        print('KEYBORD COMMANDS:')
-        print("   '1' to '9' changes label (pen color)")
-        print("   '0' eraser mode")
-        print("   'uparrow' and 'downarrow' changes pen width")
-        print("   'W' changes view (annotation, segmentation or both)")
-        print("   'I' held down temporarily removes shown image")
-        print("   'Z' held down allows zoom")
-        print("   'Z' pressed resets zoom")
-        print("   'S' saves annotation and segmentation")
-        print("   'H' prints this help")
-        print('**********************************')  
      
     # for INSEGT, it is IMPORTANT that background is [0,0,0], otherwise rgbToLabels return wrong labels.
     # I therefore re-define collors, such that possible changes in annotator do not destroy InSegt
