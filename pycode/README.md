@@ -6,8 +6,7 @@ Contains:
 
 * `demo_insegtannotator.py`, a demo showing how `insegtannotator` together with `insegtbasic` may be used for interactive segmentation.
 
-<img src="ExampleFigures/glass/annotations_overlay.png" width = "250">
-<img src="ExampleFigures/glass/segmentations_overlay.png" width = "250">
+<img src="ExampleFigures/glass/annotations_overlay.png" width = "250"> <img src="ExampleFigures/glass/segmentations_overlay.png" width = "250">
 
 
 * `insegtbasic.py`, a module providing basic InSegt image processing functionality. Features (and differences compared to matlab version):
@@ -25,7 +24,7 @@ Contains:
 
 
 * `demo_insegtbasic_without_interaction_explained.py`, similar to  the demo above, but the processing implemented in `insegtbasic.two_binarized` is divided in steps and visualised in more detail.
-  - In particular, here you have access to assignment image and the probability images for different labels. 
+  - In particular, here you have access to assignment image and the probability images for different labels.
 
 <img src="ExampleFigures/demo_insegtbasic_explained.png" width = "650">
 
