@@ -4,8 +4,9 @@ Author: vand@dtu.dk, 2020
 
 import sys 
 import PyQt5.QtCore  
-import PyQt5.QtWidgets 
+import PyQt5.QtWidgets
 import PyQt5.QtGui
+
 
 
 #class OnScreenTextView(PyQt5.QtWidgets.QGraphicsView):
@@ -33,10 +34,13 @@ class ShowText(PyQt5.QtWidgets.QWidget):
         self.resize(self.imagePix.width(), self.imagePix.height())
 
         print(f'{self.width()}, {self.height()}')
-        self.helpPix = self.makeHelpPixmap(self.width(),self.height())
-        print(f'{self.helpPix.width()}, {self.helpPix.height()}')
-        
-
+        # self.helpPix = self.makeHelpPixmap(self.width(),self.height())
+        # print(f'{self.helpPix.width()}, {self.helpPix.height()}')
+        self.label = PyQt5.QtWidgets.QLabel(self.helpText, self)
+        self.label.setStyleSheet("background-color: rgba(190,190,190,200)")
+        # self.label.autoFillBackground = False
+        self.label.move(10,10)
+            
         self.show()
 
         print("#####################################")    
@@ -74,9 +78,9 @@ class ShowText(PyQt5.QtWidgets.QWidget):
         painter_display = PyQt5.QtGui.QPainter(self) # this is painter used for display
         painter_display.setCompositionMode(PyQt5.QtGui.QPainter.CompositionMode_SourceOver)
         painter_display.drawPixmap(self.target, self.imagePix, self.source)
-        if self.showHelp:        
-            #painter_display.setCompositionMode(PyQt5.QtGui.QPainter.CompositionMode_Overlay)          
-            painter_display.drawPixmap(self.target, self.helpPix, self.source)
+        # if self.showHelp:        
+        #     #painter_display.setCompositionMode(PyQt5.QtGui.QPainter.CompositionMode_Overlay)          
+        #     painter_display.drawPixmap(self.target, self.helpPix, self.source)
                             
     def resizeEvent(self, event):
         """ Computes padding needed such that aspect ratio of the image is correct. """
@@ -96,17 +100,20 @@ class ShowText(PyQt5.QtWidgets.QWidget):
         
         if event.key()==72: #h
             print(self.helpText)
-
             self.showHelp = not self.showHelp
-       
-
+            self.label.setText(self.helpText)
+            self.label.setStyleSheet("background-color: rgba(190,190,190,200)")
+        
             self.update()
         elif event.key()==16777216: # escape
             self.closeEvent(event)
+            self.label.clear()
+            
         
     def keyReleaseEvent(self, event):
         if event.key()==72: # h
-            pass
+            self.label.setStyleSheet("background-color: rgba(190,190,190,0)")
+            self.label.clear()
             
     def closeEvent(self, event):
         print("Bye, I'm closing")
@@ -116,18 +123,20 @@ class ShowText(PyQt5.QtWidgets.QWidget):
     
 
     helpText = (
-        '******** Help for InSegt annotator ********' + '\n' +
-        'KEYBORD COMMANDS:' + '\n' +
-        "   '1' to '9' changes label (pen color)" + '\n' +
-        "   '0' eraser mode" + '\n' +
-        "   'uparrow' and 'downarrow' changes pen width" + '\n' +
-        "   'W' changes view (annotation, segmentation, both)" + '\n' +
-        "   'I' held down temporarily removes shown image" + '\n' +
-        "   'Z' held down allows zoom" + '\n' +
-        "   'Z' pressed resets zoom" + '\n' +
-        "   'S' saves annotation and segmentation" + '\n' +
-        "   'H' prints this help" + '\n' +
-        '*******************************************') 
+        '\n'
+        '   ************* Help for InSegt annotator *************   ' + '\n' +
+        '    KEYBORD COMMANDS:' + '\n' +
+        "    '1' to '9' changes label (pen color)" + '\n' +
+        "    '0' eraser mode" + '\n' +
+        "    'uparrow' and 'downarrow' changes pen width" + '\n' +
+        "    'W' changes view (annotation, segmentation, both)" + '\n' +
+        "    'I' held down temporarily removes shown image" + '\n' +
+        "    'Z' held down allows zoom" + '\n' +
+        "    'Z' pressed resets zoom" + '\n' +
+        "    'S' saves annotation and segmentation" + '\n' +
+        "    'H' prints this help" + '\n' +
+        '   *****************************************************   ' + '\n'
+        ) 
 
 if __name__ == '__main__':
        
