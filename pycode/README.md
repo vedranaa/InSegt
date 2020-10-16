@@ -22,14 +22,14 @@ Input image | User labelings | Segmentation result
    - In particular, it uses `insegtbasic.patch_clustering` function for building the dictionary and `insegtbasic.two_binarized` function for processing the label image into a segmentation image.
    - No interaction! Instead, you load an image to be segmented, and a same-size image containing the user labeling.
 
-<img src="ExampleFigures/demo_insegtbasic.png" width = "650">
+<img src="ExampleFigures/demo_insegtbasic.png" width = "750">
 
 
-* `demo_insegtbasic_without_interaction_explained.py`, similar to  the demo above, but the processing implemented in `insegtbasic.two_binarized` is divided in steps and visualised in more detail.
+* `demo_insegtbasic_without_interaction_explained.py`, similar to  the demo above, but the processing implemented in `insegtbasic.two_binarized` is divided into steps and visualized in more detail.
   - In particular, here you have access to assignment image and the probability images for different labels.
 
-<img src="ExampleFigures/demo_insegtbasic_explained.png" width = "650">
+<img src="ExampleFigures/demo_insegtbasic_explained.png" width = "750">
 
 * `annotator.py`, an annotator for drawing on an image. Based on qt5.
 
-* `insegtannotator.py`, annotator allowing for interactive segmentation. This is an extension of the annotator used for interactive segmentation. To use `InsegtAnnotator` you need a processing function which given labels returns segmentation.
+* `insegtannotator.py`, annotator allowing for interactive segmentation. This is an extension of the annotator used for interactive segmentation. To use `InsegtAnnotator` you need a processing function that given labels returns segmentation.
