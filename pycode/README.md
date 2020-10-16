@@ -22,13 +22,13 @@ Input image | User labelings | Segmentation result
    - In particular, it uses `insegtbasic.patch_clustering` function for building the dictionary and `insegtbasic.two_binarized` function for processing the label image into a segmentation image.
    - No interaction! Instead, you load an image to be segmented, and a same-size image containing the user labeling.
 
-<img src="ExampleFigures/demo_insegtbasic.png" width = "750">
+<div align="center"><img src="ExampleFigures/demo_insegtbasic.png" width = "750"></div>
 
 
 * `demo_insegtbasic_without_interaction_explained.py`, similar to  the demo above, but the processing implemented in `insegtbasic.two_binarized` is divided into steps and visualized in more detail.
   - In particular, here you have access to assignment image and the probability images for different labels.
 
-<img src="ExampleFigures/demo_insegtbasic_explained.png" width = "750">
+<div align="center"><img src="ExampleFigures/demo_insegtbasic_explained.png" width = "750"></div>
 
 * `annotator.py`, an annotator for drawing on an image. Based on qt5.
 
