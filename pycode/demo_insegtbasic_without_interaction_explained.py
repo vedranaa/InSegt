@@ -73,13 +73,18 @@ a_im[s:-s,s:-s] = assignment
 
 # %% Visualization.
 
-fig, ax = plt.subplots(2, 2, sharex = True, sharey = True)
+fig, ax = plt.subplots(2, 3, sharex = True, sharey = True, figsize=(15, 10))
 ax[0,0].imshow(image, cmap='gray')
 ax[0,0].set_title('image')
-ax[0,1].imshow(a_im)
-ax[0,1].set_title('assignment')
-ax[1,0].imshow(labels, vmin=0, vmax=nr_classes, cmap = insegtbasic.gray_cool(nr_classes))
-ax[1,0].set_title('labels')
+ax[1,0].imshow(a_im)
+ax[1,0].set_title('assignment')
+ax[0,1].imshow(labels, vmin=0, vmax=nr_classes, cmap = insegtbasic.gray_cool(nr_classes))
+ax[0,1].set_title('labels')
 ax[1,1].imshow(segmentation, vmin=0, vmax=nr_classes, cmap = insegtbasic.gray_cool(nr_classes))
 ax[1,1].set_title('segmentation')
+ax[0,2].imshow(probabilities[:,:,0], vmin=0, vmax=1, cmap = 'jet')
+ax[0,2].set_title('probablitily label 1')
+ax[1,2].imshow(probabilities[:,:,1], vmin=0, vmax=1, cmap = 'jet')
+ax[1,2].set_title('probablitily label 2')
 
+fig.savefig('demo_insegtbasic_explained.png')

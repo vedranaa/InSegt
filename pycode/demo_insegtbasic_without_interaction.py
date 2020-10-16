@@ -27,11 +27,13 @@ T1, T2 = insegtbasic.patch_clustering(image, patch_size, nr_training_patches, nr
 # Processing.
 segmentation = insegtbasic.two_binarized(labels, T1, T2)
 
-# Visualization
-fig, ax = plt.subplots(1, 3, sharex = True, sharey = True)
+#%% Visualization
+fig, ax = plt.subplots(1, 3, sharex = True, sharey = True, figsize=(15,5))
 ax[0].imshow(image, cmap='gray')
 ax[0].set_title('image')
 ax[1].imshow(labels, vmin=0, vmax=nr_classes, cmap = insegtbasic.gray_cool(nr_classes))
 ax[1].set_title('labels')
 ax[2].imshow(segmentation, vmin=0, vmax=nr_classes, cmap = insegtbasic.gray_cool(nr_classes))
 ax[2].set_title('segmentation')
+
+#fig.savefig('demo_insegtbasic.png')

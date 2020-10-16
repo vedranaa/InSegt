@@ -75,18 +75,24 @@ class InSegtAnnotator(annotator.Annotator):
         segmentation_rgba = self.labelsToRgba(segmentation, self.segmentationOpacity) # numpy RGBA: height x width x 4, values uint8  
         self.segmentationPix = self.arrayToPixmap(segmentation_rgba)    # final pixmap    
     
+    @staticmethod
+    def savePixmap(pixmap, filenamebase, gray):
+        """Helping function for saving annotation and segmentation pixmaps"""
+        pixmap.save(filenamebase + '_pixmap.png', 'png')
+        rgba = InSegtAnnotator.pixmapToArray(pixmap) # numpy RGBA: height x width x 4, values uint8      
+        skimage.io.imsave(filenamebase + '_rgb.png', rgba[:,:,:3], check_contrast=False)   
+        labels = InSegtAnnotator.rgbaToLabels(rgba) # numpy labels: height x width, values 0 to N uint8    
+        skimage.io.imsave(filenamebase + '_index.png', 30*labels, check_contrast=False) # 30*8 = 240<255     
+        alpha = (rgba[:,:,3:].astype(np.float))/255
+        overlay = gray[:,:,:3]*(1-alpha) + rgba[:,:,:3]*(alpha)
+        skimage.io.imsave(filenamebase + '_overlay.png', overlay.astype(np.uint8), check_contrast=False)                 
+         
     def saveOutcome(self):
-        self.annotationPix.save('annotations_pixmap.png', 'png')
-        self.segmentationPix.save('segmentations_pixmap.png', 'png')    
-        annotations = self.pixmapToArray(self.annotationPix) # numpy RGBA: height x width x 4, values uint8      
-        skimage.io.imsave('annotations_rgb.png', annotations[:,:,:3], check_contrast=False)                 
-        segmentations = self.pixmapToArray(self.segmentationPix) # numpy RGBA: height x width x 4, values uint8 
-        skimage.io.imsave('segmentations_rgb.png', segmentations[:,:,:3], check_contrast=False)       
-        labels = self.rgbaToLabels(annotations) # numpy labels: height x width, values 0 to N uint8    
-        labels_segmentation = self.rgbaToLabels(segmentations) # numpy labels: height x width, values 0 to N uint8            
-        skimage.io.imsave('annotations_gray.png', 30*labels, check_contrast=False) # 30*8 = 240<255     
-        skimage.io.imsave('segmentations_gray.png', 30*labels_segmentation, check_contrast=False)              
-        print('   Saved annotations and segmentations in various data types')
+        gray = self.pixmapToArray(self.imagePix) # numpy RGBA: height x width x 4, values uint8 
+        skimage.io.imsave('gray.png', gray[:,:,:1], check_contrast=False)   
+        self.savePixmap(self.annotationPix, 'annotations', gray)
+        self.savePixmap(self.segmentationPix, 'segmentations', gray)
+        print('   Saved annotations and segmentations in various data types')    
       
     helpText = (
         '******** Help for insegt annotator ********' + '\n' +
