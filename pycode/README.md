@@ -29,6 +29,6 @@ Input image | User labelings | Segmentation result
 
 <div align="center"><img src="ExampleFigures/demo_insegtbasic_explained.png" width = "750"></div>
 
-* `annotator.py`, an annotator for drawing on an image. Based on qt5.
+* `annotator.py`, an annotator for drawing on an image. Based on [qt5 for python](https://doc.qt.io/qtforpython/).
 
 * `insegtannotator.py`, annotator allowing for interactive segmentation. This is an extension of the annotator used for interactive segmentation. To use `InsegtAnnotator` you need a processing function that given labels returns segmentation.
