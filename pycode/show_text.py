@@ -21,9 +21,7 @@ class ShowText(PyQt5.QtWidgets.QWidget):
         super().__init__() 
     
         # Pixmap layers
-        self.imagePix = PyQt5.QtGui.QPixmap(filename)
-        
-        self.showHelp = True
+        self.imagePix = PyQt5.QtGui.QPixmap(filename)      
            
         # Atributes relating to the transformation between widget 
         # coordinate system and image coordinate system
@@ -33,45 +31,25 @@ class ShowText(PyQt5.QtWidgets.QWidget):
         # Playtime
         self.resize(self.imagePix.width(), self.imagePix.height())
 
-        print(f'{self.width()}, {self.height()}')
-        # self.helpPix = self.makeHelpPixmap(self.width(),self.height())
-        # print(f'{self.helpPix.width()}, {self.helpPix.height()}')
-        self.label = PyQt5.QtWidgets.QLabel(self.helpText, self)
+        # Text overlay
+        self.label = PyQt5.QtWidgets.QLabel(self)   
         self.label.setStyleSheet("background-color: rgba(190,190,190,200)")
-        # self.label.autoFillBackground = False
-        self.label.move(10,10)
-            
+        self.label.resize(0,0)
+        self.label.move(10,10)     
+        self.showingHelp = False
+        
+        self.timer = PyQt5.QtCore.QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.stopShow)
+ 
+        
         self.show()
 
         print("#####################################")    
         print("Starting show image. For help, hit 'H'")    
         
-    @staticmethod   
-    def makeHelpPixmap(width,height):
     
         
-        scene = PyQt5.QtWidgets.QGraphicsScene()
-        scene.addRect(0, 0, width, height, PyQt5.QtGui.QPen(PyQt5.QtCore.Qt.NoPen), 
-                PyQt5.QtGui.QBrush(PyQt5.QtGui.QColor(191,191,191,255)))
-        scene.addSimpleText(ShowText.helpText, PyQt5.QtGui.QFont('SansSerif',10))
-        
-        graphicsView = PyQt5.QtWidgets.QGraphicsView(scene)
-        
-        textPix = PyQt5.QtGui.QPixmap(width, height) 
-        painter = PyQt5.QtGui.QPainter(textPix)
-        
-        graphicsView.setBackgroundBrush((PyQt5.QtGui.QColor("gray")))
-        graphicsView.setGeometry(0, 0, width, height) 
-                
-        #rectf = PyQt5.QtCore.QRectF(0, 0, width, height) 
-        rect = PyQt5.QtCore.QRect(0, 0, width, height) 
-        
-        print(f'scene rect {scene.sceneRect()}')
-        #graphicsView.render(painter, target=rectf, source=rect)
-        graphicsView.render(painter, source=rect)
-        
-        #graphicsView.render(painter)
-        return textPix    
     
     def paintEvent(self, event):
         """ Paint event for displaying the content of the widget."""
@@ -93,18 +71,40 @@ class ShowText(PyQt5.QtWidgets.QWidget):
         self.target = PyQt5.QtCore.QRect(padding, self.rect().bottomRight()-padding)
         
         #self.graphicsView.setGeometry(0.25*self.width(),0.25*self.height(),0.5*self.width(),0.5*self.height())  
-
+    
+    def showHelp(self):
+        self.label.setText(self.helpText)
+        self.label.adjustSize()
+        #self.label.resize(self.label.fontMetrics().size(PyQt5.QtCore.Qt.TextExpandTabs, self.helpText))
+        self.update()
+          
+    def hideHelp(self):
+        self.label.resize(0,0)
+        self.update()
+        
+    def startShow(self):
+        #self.timer.stop()
+        self.timer.setInterval(2000)
+        self.timer.start()
+        print('Starting again')
+        
+        
+    def stopShow(self):
+        print('...Stopping now!')
+       
             
     def keyPressEvent(self, event):
         # print(f'key {event.key()}, text {event.text()}') 
         
-        if event.key()==72: #h
-            print(self.helpText)
-            self.showHelp = not self.showHelp
-            self.label.setText(self.helpText)
-            self.label.setStyleSheet("background-color: rgba(190,190,190,200)")
+        self.startShow()
         
-            self.update()
+        
+        
+        if event.key()==72: #h
+            if not self.showingHelp:
+                self.showingHelp = True
+                self.showHelp()
+            
         elif event.key()==16777216: # escape
             self.closeEvent(event)
             self.label.clear()
@@ -112,8 +112,9 @@ class ShowText(PyQt5.QtWidgets.QWidget):
         
     def keyReleaseEvent(self, event):
         if event.key()==72: # h
-            self.label.setStyleSheet("background-color: rgba(190,190,190,0)")
-            self.label.clear()
+            if self.showingHelp:
+                self.showingHelp = False
+                self.hideHelp()
             
     def closeEvent(self, event):
         print("Bye, I'm closing")
@@ -123,7 +124,7 @@ class ShowText(PyQt5.QtWidgets.QWidget):
     
 
     helpText = (
-        '\n'
+        '\n' +
         '   ************* Help for InSegt annotator *************   ' + '\n' +
         '    KEYBORD COMMANDS:' + '\n' +
         "    '1' to '9' changes label (pen color)" + '\n' +

@@ -22,7 +22,7 @@ class InSegtAnnotator(annotator.Annotator):
 
         super().__init__(imagePix.size()) # the first drawing happens when init calls show()  
         
-        self.views = {0:'both', 1:'annotation', 2:'segmentation'}
+        self.overlays = {0:'both', 1:'annotation', 2:'segmentation'}
         self.annotationOpacity = 0.3
         self.segmentationOpacity = 0.3
         self.imagePix = imagePix
@@ -35,9 +35,9 @@ class InSegtAnnotator(annotator.Annotator):
         painter_display.setCompositionMode(PyQt5.QtGui.QPainter.CompositionMode_SourceOver)
         if self.showImage: 
             painter_display.drawPixmap(self.target, self.imagePix, self.source)
-        if self.view != 1: # view 0 or 2
+        if self.overlay != 1: # overlay 0 or 2
             painter_display.drawPixmap(self.target, self.segmentationPix, self.source)
-        if self.view != 2: # view 0 or 1
+        if self.overlay != 2: # overlay 0 or 1
             painter_display.drawPixmap(self.target, self.annotationPix, self.source)
         if self.showImage:    
             painter_display.drawPixmap(self.target, self.cursorPix, self.source)
@@ -54,7 +54,7 @@ class InSegtAnnotator(annotator.Annotator):
             if self.showImage:          
                 self.showImage = False
                 self.update()
-                print(f'   Turined off show image')
+                self.showInfo('Turned off show image')
         else:
             super().keyPressEvent(event)
     
@@ -63,7 +63,7 @@ class InSegtAnnotator(annotator.Annotator):
         if event.key()==73: # i
             self.showImage = True
             self.update()
-            print(f'   Turined on show image')
+            self.showInfo('Turned on show image')
         else:
             super().keyReleaseEvent(event)
     
@@ -92,27 +92,31 @@ class InSegtAnnotator(annotator.Annotator):
         skimage.io.imsave('gray.png', gray[:,:,:1], check_contrast=False)   
         self.savePixmap(self.annotationPix, 'annotations', gray)
         self.savePixmap(self.segmentationPix, 'segmentations', gray)
-        print('   Saved annotations and segmentations in various data types')    
-      
+        self.showInfo('Saved annotations and segmentations in various data types')        
+    
     helpText = (
-        '******** Help for insegt annotator ********' + '\n' +
-        'KEYBORD COMMANDS:' + '\n' +
-        "   '1' to '9' changes label (pen color)" + '\n' +
-        "   '0' eraser mode" + '\n' +
-        "   'uparrow' and 'downarrow' changes pen width" + '\n' +
-        "   'W' changes view (annotation, segmentation, both)" + '\n' +
-        "   'I' held down temporarily removes shown image" + '\n' +
-        "   'Z' held down allows zoom" + '\n' +
-        "   'Z' pressed resets zoom" + '\n' +
-        "   'S' saves annotation and segmentation" + '\n' +
-        "   'H' prints this help" + '\n' +
-        '*******************************************') 
+        '<i>Help for InSegt annotator</i> <br>' 
+        '<b>KEYBOARD COMMANDS:</b> <br>' 
+        '&nbsp; &nbsp; <b>1</b> to <b>9</b> changes pen label (L) <br>' 
+        '&nbsp; &nbsp; <b>0</b> eraser mode <br>' 
+        '&nbsp; &nbsp; <b>&uarr;</b> and <b>&darr;</b> changes pen width (W) <br>' 
+        '&nbsp; &nbsp; <b>O</b> changes overlay <br>' 
+        '&nbsp; &nbsp; <b>I</b> held down hides image <br>'
+        '&nbsp; &nbsp; <b>Z</b> held down enables zoom <br>' 
+        '&nbsp; &nbsp; <b>Z</b> pressed resets zoom <br>' 
+        '&nbsp; &nbsp; <b>S</b> saves results <br>' 
+        '&nbsp; &nbsp; <b>H</b> shows this help <br>' 
+        '<b>MOUSE DRAG:</b> <br>' 
+        '&nbsp; &nbsp; Draws annotation <br>' 
+        '&nbsp; &nbsp; Zooms when zoom enabled')
     
     @classmethod
-    def printHelp(cls): 
-        """Overriding help"""
-        print(cls.helpText)
-        
+    def introText(cls, rich = True):
+        if rich:
+            s = "<i>Starting InSegt annotator</i> <br> For help, hit <b>H</b>"
+        else:
+            s = "Starting InSegt annotator. For help, hit 'H'."
+        return s        
      
     # for INSEGT, it is IMPORTANT that background is [0,0,0], otherwise rgbToLabels return wrong labels.
     # I therefore re-define collors, such that possible changes in annotator do not destroy InSegt

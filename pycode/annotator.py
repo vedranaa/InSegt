@@ -32,8 +32,8 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         self.lastDrawPoint = PyQt5.QtCore.QPoint()
         
         # Atributes for displaying
-        self.view = 0
-        self.views = {0:'both', 1:'annotation', 2:'image'}
+        self.overlay = 0
+        self.overlays = {0:'both', 1:'annotation', 2:'image'}
         self.annotationOpacity = 0.5
         self.cursorOpacity = 0.5
         self.zoomOpacity = 0.5
@@ -55,14 +55,28 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         self.activelyZooming = False 
         self.activelyDrawing = False
         self.newZoomValues = None
+        
+        # Label for displaying text overlay
+        self.textField = PyQt5.QtWidgets.QLabel(self)
+        self.textField.setMouseTracking(True)
+        self.textField.setStyleSheet("background-color: rgba(191,191,191,191)")
+        self.textField.setTextFormat(PyQt5.QtCore.Qt.RichText)
+        self.textField.resize(0,0)
+        self.textField.move(10,10)     
+        self.hPressed = False
+        
+        # Timer for displaying text overlay
+        self.timer = PyQt5.QtCore.QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.hideText)
 
         # Playtime
         initial_zoom = min(2000/max(self.imagePix.width(), 4*self.imagePix.height()/3),1) # downsize if larger than (2000,1500)
         self.resize(initial_zoom*self.imagePix.width(), initial_zoom*self.imagePix.height())
         self.show()
         
-        print("#####################################")    
-        print("Starting annotator. For help, hit 'H'")    
+        self.showInfo(self.introText(),5000)
+        print(self.introText(False))
     
     @classmethod
     def fromFilename(cls, filename):
@@ -71,8 +85,51 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         annotator.imagePix = imagePix
         return annotator
     
+    helpText = (
+        '<i>Help for annotator</i> <br>' 
+        '<b>KEYBOARD COMMANDS:</b> <br>' 
+        '&nbsp; &nbsp; <b>1</b> to <b>9</b> changes pen label (L) <br>' 
+        '&nbsp; &nbsp; <b>0</b> eraser mode <br>' 
+        '&nbsp; &nbsp; <b>&uarr;</b> and <b>&darr;</b> changes pen width (W) <br>' 
+        '&nbsp; &nbsp; <b>O</b> changes overlay <br>' 
+        '&nbsp; &nbsp; <b>Z</b> held down enables zoom <br>' 
+        '&nbsp; &nbsp; <b>Z</b> pressed resets zoom <br>' 
+        '&nbsp; &nbsp; <b>S</b> saves annotation <br>' 
+        '&nbsp; &nbsp; <b>H</b> shows this help <br>' 
+        '<b>MOUSE DRAG:</b> <br>' 
+        '&nbsp; &nbsp; Draws annotation <br>' 
+        '&nbsp; &nbsp; Zooms when zoom enabled')
+    
+    @classmethod
+    def introText(cls, rich = True):
+        if rich:
+            s = '<i>Starting annotator</i> <br> For help, hit <b>H</b>'
+            #'<hr> ANNOTATOR <br> Copyright (C) 2020 <br> Vedrana A. Dahl'
+        else:
+            s = "Starting annotator. For help, hit 'H'."
+        return s
+        
+    def showHelp(self):
+        self.timer.stop()
+        self.showText(self.helpText)
+    
+    def showInfo(self, text, time=1000):
+        if not self.hPressed:
+            self.timer.start(time)
+            self.showText(text)
+    
+    def showText(self, text):
+        self.textField.setText(text)
+        #self.textField.resize(self.textField.fontMetrics().size(PyQt5.QtCore.Qt.TextExpandTabs, text))
+        self.textField.adjustSize()
+        self.update()
+          
+    def hideText(self):
+        self.textField.resize(0,0)
+        self.update()
+        
     def setTitle(self):
-        self.setWindowTitle(f'L:{self.label}, P:{self.penWidth}, W:{self.views[self.view]}')
+        self.setWindowTitle(f'L:{self.label}, W:{self.penWidth}, O:{self.overlays[self.overlay]}')
             
     def makePainter(self, pixmap, color):
         """" Returns scribble painter operating on a given pixmap. """
@@ -91,9 +148,9 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         """ Paint event for displaying the content of the widget."""
         painter_display = PyQt5.QtGui.QPainter(self) # this is painter used for display
         painter_display.setCompositionMode(PyQt5.QtGui.QPainter.CompositionMode_SourceOver)
-        if self.view != 1: # view 0 or 2
+        if self.overlay != 1: # overlay 0 or 2
             painter_display.drawPixmap(self.target, self.imagePix, self.source)
-        if self.view != 2: # view 0 or 1
+        if self.overlay != 2: # overlay 0 or 1
             painter_display.drawPixmap(self.target, self.annotationPix, self.source)
         painter_display.drawPixmap(self.target, self.cursorPix, self.source)
         
@@ -105,7 +162,6 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         painter_scribble.drawPoint(point)   
     
     def mousePressEvent(self, event):
-        #print('mouse press')
         if event.button() == PyQt5.QtCore.Qt.LeftButton: 
             if self.zPressed: # initiate zooming and not drawing
                 self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # clear (fill with transparent)
@@ -121,7 +177,6 @@ class Annotator(PyQt5.QtWidgets.QWidget):
             self.update()
     
     def mouseMoveEvent(self, event):
-        #print('mouse move event')       
         if self.activelyZooming: 
             self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # clear (fill with transparent)
             painter_scribble = self.makePainter(self.cursorPix,
@@ -131,7 +186,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
             w = abs(self.lastCursorPoint.x() - event.x())
             h = abs(self.lastCursorPoint.y() - event.y())      
             painter_scribble.fillRect(x,y,w,h,self.color_picker(0, self.zoomOpacity))
-        else:          
+        else:     
             if self.activelyDrawing: 
                 painter_scribble = self.makePainter(self.annotationPix, 
                         self.color_picker(self.label, (self.label>0)*self.annotationOpacity)) # the painter used for drawing        
@@ -140,13 +195,12 @@ class Annotator(PyQt5.QtWidgets.QWidget):
             if self.zPressed:
                 if  self.newZoomValues is None:
                     self.newZoomValues = 0 # for distinction between reset and cancel
-            else:
+            else: # just moving around
                 self.drawCursorPoint(event.pos())
             self.lastCursorPoint = event.pos()      
         self.update()
     
-    def mouseReleaseEvent(self, event):
-        #print('mouse release event')        
+    def mouseReleaseEvent(self, event):    
         if self.activelyZooming:
             x = min(self.lastCursorPoint.x(), event.x())
             y = min(self.lastCursorPoint.y(), event.y())
@@ -196,7 +250,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
                 self.newZoomValues.size()/self.zoomFactor)
         self.source.translate(-self.offset)
         self.source = self.source.intersected(self.imagePix.rect()) 
-        print('   Zooming to ' + self.formatQRect(self.source))     
+        self.showInfo('Zooming to ' + self.formatQRect(self.source))     
         self.offset = self.imagePix.rect().topLeft() - self.source.topLeft()
         self.adjustTarget()
         self.newZoomValues = None
@@ -204,42 +258,43 @@ class Annotator(PyQt5.QtWidgets.QWidget):
     def resetZoom(self):
         """ Back to original zoom """
         self.source = PyQt5.QtCore.QRect(0,0,self.imagePix.width(),self.imagePix.height())
-        print(f'   Reseting zoom to ' + self.formatQRect(self.source))        
+        self.showInfo('Reseting zoom to ' + self.formatQRect(self.source))        
         self.offset = PyQt5.QtCore.QPoint(0,0)
         self.adjustTarget()        
         self.newZoomValues = None
             
     def keyPressEvent(self, event):
-        # print(f'key {event.key()}, text {event.text()}') 
         if 47<event.key()<58: #numbers 0 (48) to 9 (57)
             self.label = event.key()-48
             self.drawCursorPoint(self.lastCursorPoint)
             self.update()
-            print(f'   Changed to label {self.label}')
+            self.showInfo(f'Changed pen label to {self.label}')
         elif event.key()==16777235: # uparrow          
             self.penWidth = min(self.penWidth+1,50) 
             self.drawCursorPoint(self.lastCursorPoint)
             self.update()
-            print(f'   Changed pen width to  {self.penWidth}')
+            self.showInfo(f'Changed pen width to {self.penWidth}')
         elif event.key()==16777237: # downarrow
             self.penWidth = max(self.penWidth-1,1)
             self.drawCursorPoint(self.lastCursorPoint)
             self.update()
-            print(f'   Changed pen widht to  {self.penWidth}')
+            self.showInfo(f'Changed pen widht to {self.penWidth}')
         elif event.key()==83: # s
             self.saveOutcome()
-        elif event.key()==87: # w
-            self.view = (self.view+1)%len(self.views)
+        elif event.key()==79: # o
+            self.overlay = (self.overlay+1)%len(self.overlays)
             self.update()
-            print(f'   Changed view to  {self.view}')
-        elif event.key()==72: #h
-            self.printHelp()
+            self.showInfo(f'Changed overlay to {self.overlays[self.overlay]}')
         elif event.key()==90: # z
             if not self.zPressed:
-                print('   Zooming enabled')
+                self.showInfo('Zooming enabled')
                 self.zPressed = True
                 self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # clear (fill with transparent)
                 self.update()
+        elif event.key()==72: # h        
+            if not self.hPressed:
+                self.hPressed = True
+                self.showHelp()
         elif event.key()==16777216: # escape
             self.closeEvent(event)
         self.setTitle()
@@ -251,22 +306,25 @@ class Annotator(PyQt5.QtWidgets.QWidget):
                 if self.newZoomValues is None:
                     self.resetZoom()
                 elif self.newZoomValues==0:
-                    print('   Zooming canceled')
+                    self.showInfo('Zooming canceled')
                     self.newZoomValues = None
                 else:
                     self.executeZoom()                       
                 self.update()
             self.zPressed = False
+        elif event.key()==72: # h
+            self.hideText()
+            self.hPressed = False
             
     def closeEvent(self, event):
-        print("Bye, I'm closing")
+        self.showInfo("Bye, I'm closing")
         PyQt5.QtWidgets.QApplication.quit()
         # hint from: https://stackoverflow.com/questions/54045134/pyqt5-gui-cant-be-close-from-spyder
         # should also check: https://github.com/spyder-ide/spyder/wiki/How-to-run-PyQt-applications-within-Spyder
    
     def saveOutcome(self):
         self.annotationPix.save('annotations.png', 'png')
-        print('   Saved annotations')
+        self.showInfo('Saved annotations')
         
     # colors associated with different labels
     colors = [
@@ -293,23 +351,8 @@ class Annotator(PyQt5.QtWidgets.QWidget):
     def formatQRect(rect):
         coords =  rect.getCoords()
         s = f'({coords[0]},{coords[1]})--({coords[2]},{coords[3]})'
-        return(s) 
-    
-    @classmethod 
-    def printHelp(cls):
-        """Help"""
-        print('******* Help for annotator *******')
-        print('KEYBORD COMMANDS:')
-        print("   '1' to '9' changes label (pen color)")
-        print("   '0' eraser mode")
-        print("   'uparrow' and 'downarrow' changes pen width")
-        print("   'W' changes view (image, annotation or both)")
-        print("   'Z' held down allows zoom")
-        print("   'Z' pressed resets zoom")
-        print("   'S' saves annotation")
-        print("   'H' prints this help")
-        print('**********************************')  
-    
+        return(s)     
+      
 if __name__ == '__main__':
        
     app = PyQt5.QtWidgets.QApplication(sys.argv)

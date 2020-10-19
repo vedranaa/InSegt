@@ -6,9 +6,9 @@ Contains:
 
 * `demo_insegtannotator.py`, a demo showing how `insegtannotator` together with `insegtbasic` may be used for interactive segmentation.
 
-Input image | User labelings | Segmentation result
-:---:|:---:|:---:
-<img src="ExampleFigures/glass/gray.png" width = "250">  |  <img src="ExampleFigures/glass/annotations_overlay.png" width = "250"> | <img src="ExampleFigures/glass/segmentations_overlay.png" width = "250">
+Input image | User labelings | Segmentation result | Screenshot
+:---:|:---:|:---:|:---:
+<img src="ExampleFigures/glass/gray.png" height = "250">  |  <img src="ExampleFigures/glass/annotations_overlay.png" height = "250"> | <img src="ExampleFigures/glass/segmentations_overlay.png" height = "250"> | <img src="ExampleFigures/glass/screenshot.png" height = "250">
 
 * `insegtbasic.py`, a module providing basic InSegt image processing functionality. Features (and differences compared to matlab version):
    - Purely python. (In matlab, we use mex files written in C++.)
