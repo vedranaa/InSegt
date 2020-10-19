@@ -1,10 +1,10 @@
 ## InSegtPy
 
-*A simplistic py version of InSegt*
+*A py version of InSegt*
 
 Contains:
 
-* `demo_insegtannotator.py`, a demo showing how `insegtannotator` together with `insegtbasic` may be used for interactive segmentation.
+* `demo_insegtannotator.py`, a demo showing how `insegtannotator` together with `insegtbasic` is used for interactive segmentation.
 
 Input image | User labelings | Segmentation result | Screenshot
 :---:|:---:|:---:|:---:
@@ -14,12 +14,12 @@ Input image | User labelings | Segmentation result | Screenshot
    - Purely python. (In matlab, we use mex files written in C++.)
    - Uses patch-based features for clustering. (In matlab, we have: patch-based, normalized patches, SIFT features, PCA features, Gaussian-derivative features.)
    - Uses minibatch k-means from sklearn for clustering. (In matlab, we use k-means tree.)
-   - Unlabeled pixels have zeros in label images. (In matlab, we distribute the probabilities to all classes if a pixel is unlabeled. We need to figure out what's best, and whether it matters.)  
+   - Unlabeled pixels have zeros in label images. (In matlab, we distribute the probabilities to all classes if a pixel is unlabeled. We need to figure out what's best, and whether it matters.)
 
 
 * `demo_insegtbasic_without_interaction.py`, a script that processes an image using functionality from `insegtbasic.py`.
    - In particular, it uses `insegtbasic.patch_clustering` function for building the dictionary and `insegtbasic.two_binarized` function for processing the label image into a segmentation image.
-   - No interaction! Instead, you load an image to be segmented, and a same-size image containing the user labeling.
+   - No interaction! Instead, you load an image to be segmented, and an image of the same size containing the user labeling.
 
 <div align="center"><img src="ExampleFigures/demo_insegtbasic.png" width = "750"></div>
 
@@ -31,4 +31,4 @@ Input image | User labelings | Segmentation result | Screenshot
 
 * `annotator.py`, an annotator for drawing on an image. Based on [qt for python](https://doc.qt.io/qtforpython/).
 
-* `insegtannotator.py`, annotator allowing for interactive segmentation. This is an extension of the annotator used for interactive segmentation. To use `InsegtAnnotator` you need a processing function that given labels returns segmentation.
+* `insegtannotator.py`, annotator allowing for interactive segmentation. This is an extension of the annotator used for interactive segmentation. To use `InsegtAnnotator`, you need a processing function that given labels returns a segmentation.
