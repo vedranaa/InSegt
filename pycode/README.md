@@ -1,6 +1,6 @@
 ## InSegtPy
 
-*A py version of InSegt*
+*A py version of [InSegt](https://github.com/vedranaa/InSegt)*
 
 Contains:
 
