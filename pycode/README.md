@@ -1,6 +1,6 @@
 ## InSegtPy
 
-*A simplistic py version of InSegt*
+*A py version of InSegt*
 
 Contains:
 
@@ -14,11 +14,11 @@ Input image | User labelings | Segmentation result | Screenshot
    - Purely python. (In matlab, we use mex files written in C++.)
    - It uses intensities from image patches as features for clustering. (In matlab, we have: patch-based, normalized patches, SIFT features, PCA features, Gaussian-derivative features.)
    - Uses minibatch k-means from sklearn for clustering. (In matlab, we use k-means tree.)
-   - Unlabeled pixels have zeros in label images. (In matlab, we distribute the probabilities to all classes if a pixel is unlabeled. We need to figure out what's best, and whether it matters.)  
+   - Unlabeled pixels have zeros in label images. (In matlab, we distribute the probabilities to all classes if a pixel is unlabeled. We need to figure out what's best, and whether it matters.)
 
 * `demo_insegtbasic.py`, a demo script that processes an image using functionality from `insegtbasic.py`.
    - In particular, it uses `insegtbasic.patch_clustering` function for building the dictionary and `insegtbasic.two_binarized` function for processing the label image into a segmentation image.
-   - No interaction! Instead, you load an image to be segmented, and a same-size image containing the user labeling.
+   - No interaction! Instead, you load an image to be segmented, and an image of the same size containing the user labeling.
 
 <div align="center"><img src="ExampleFigures/demo_insegtbasic.png" width = "750"></div>
 
