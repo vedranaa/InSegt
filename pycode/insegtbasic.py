@@ -152,6 +152,7 @@ def patch_clustering(image, patch_size, nr_training_patches, nr_clusters):
     B = assignment2biadjacency(assignment, image.shape, patch_size, nr_clusters)
     T1, T2 = biadjacency2transformations(B)
     return T1, T2
+
 def two_binarized(labels, T1, T2):
     """InSegt processing function: from labels to segmentation."""
     nr_classes = np.max(labels)    

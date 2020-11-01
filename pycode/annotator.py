@@ -441,8 +441,9 @@ if __name__ == '__main__':
          ex = Annotator.fromFilename(filename)
     else:
          # ex = Annotator()
-         # ex = Annotator((1024,512))    
-         rgb = skimage.data.coffee()
+         # ex = Annotator((1024,512))   
+         # ex = Annotator.fromFilename('../data/glass.png')
+         rgb = skimage.data.astronaut()
          rgba = np.concatenate((rgb, 255 + np.zeros(rgb.shape[0:2]+(1,), 
                                             dtype=np.uint8)), axis=2)
          ex = Annotator.fromRgba(rgba)
