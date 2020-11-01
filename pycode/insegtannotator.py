@@ -1,19 +1,53 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
+
+""" Interactive segmentation annotator. 
+
+This module contains the InSegtAnnotator class, which is a subclass of the 
+Annotator class from the module annotator. InSegtAnnotator extends Annotator 
+with a segmentation layer. Segmentation is computed from annotations using 
+a generic processing function.  
+
+
+Use:
+    Run from your environmend by passing InSegtAnnotator a grayscale uint8 
+    image and a processing function which given labeling returns segmentation. 
+    Check also example at the bottom of this file.
+    
+Author: vand@dtu.dk, 2020
 Created on Sun Oct 11 22:42:32 2020
 
-@author: vand@dtu.dk, 2020
+Todo:
+    * All from annotator.
+    * Showing probability images for probability-based processing function.
+
+GitHub:
+   https://github.com/vedranaa/InSegt/tree/master/pycode
+
 """
 
 import annotator
 import numpy as np
 import PyQt5.QtCore  
-import skimage.io
+import skimage.io # this is just to get hold of example image
+import sys
 
 class InSegtAnnotator(annotator.Annotator):
     
     def __init__(self, image, processing_function):
+        '''
+        Initializes InSegtAnnotator given an image and a processing function.
+
+        Parameters
+        ----------
+        image : An image as a 2D array of dtype uint8.
+        processing_function : A processing function which given an annotation 
+            returns a segmentation. Annotation is given as a 2D array of 
+            dtype uint8, where 0 represents unlabeled pixels, and numbers
+            1 to C represent labelings for diffeerent classes. (In current 
+            impelmentation C<10.) A segmentation is also a 2D array of dytpe
+            uint8.
+        '''
         
         imagePix = self.grayToPixmap(image)
         self.segmentationPix = PyQt5.QtGui.QPixmap(imagePix.width(), imagePix.height())
@@ -68,24 +102,28 @@ class InSegtAnnotator(annotator.Annotator):
             super().keyReleaseEvent(event)
     
     def transformLabels(self):
-        """Transforming pixmap annotation to pixmap segmentation via numpy and processing function"""        
+        """Transforming pixmap annotation to pixmap segmentation."""        
         annotations = self.pixmapToArray(self.annotationPix) # numpy RGBA: height x width x 4, values uint8      
         labels = self.rgbaToLabels(annotations) # numpy labels: height x width, values 0 to N uint8    
         segmentation = self.processing_function(labels) # numpy labels: height x width, values 0 to N uint8
-        segmentation_rgba = self.labelsToRgba(segmentation, self.segmentationOpacity) # numpy RGBA: height x width x 4, values uint8  
-        self.segmentationPix = self.arrayToPixmap(segmentation_rgba)    # final pixmap    
+        segmentation_rgba = self.labelsToRgba(segmentation, 
+                                              self.segmentationOpacity) # numpy RGBA: height x width x 4, values uint8  
+        self.segmentationPix = self.rgbaToPixmap(segmentation_rgba)    # final pixmap    
     
     @staticmethod
     def savePixmap(pixmap, filenamebase, gray):
-        """Helping function for saving annotation and segmentation pixmaps"""
+        """Helping function for saving annotation and segmentation pixmaps."""
         pixmap.save(filenamebase + '_pixmap.png', 'png')
         rgba = InSegtAnnotator.pixmapToArray(pixmap) # numpy RGBA: height x width x 4, values uint8      
-        skimage.io.imsave(filenamebase + '_rgb.png', rgba[:,:,:3], check_contrast=False)   
+        skimage.io.imsave(filenamebase + '_rgb.png', rgba[:,:,:3], 
+                          check_contrast=False)   
         labels = InSegtAnnotator.rgbaToLabels(rgba) # numpy labels: height x width, values 0 to N uint8    
-        skimage.io.imsave(filenamebase + '_index.png', 30*labels, check_contrast=False) # 30*8 = 240<255     
+        skimage.io.imsave(filenamebase + '_index.png', 30*labels, 
+                          check_contrast=False) # 30*8 = 240<255     
         alpha = (rgba[:,:,3:].astype(np.float))/255
         overlay = gray[:,:,:3]*(1-alpha) + rgba[:,:,:3]*(alpha)
-        skimage.io.imsave(filenamebase + '_overlay.png', overlay.astype(np.uint8), check_contrast=False)                 
+        skimage.io.imsave(filenamebase + '_overlay.png', 
+                          overlay.astype(np.uint8), check_contrast=False)                 
          
     def saveOutcome(self):
         gray = self.pixmapToArray(self.imagePix) # numpy RGBA: height x width x 4, values uint8 
@@ -160,15 +198,15 @@ class InSegtAnnotator(annotator.Annotator):
         qimage = qpixmap.toImage().convertToFormat(PyQt5.QtGui.QImage.Format_RGBA8888)
         buffer = qimage.constBits()
         buffer.setsize(qpixmap.height() * qpixmap.width() * 4) # 4 layers for RGBA
-        img = np.frombuffer(buffer, np.uint8).reshape((qpixmap.height(), 
+        rgba = np.frombuffer(buffer, np.uint8).reshape((qpixmap.height(), 
                 qpixmap.width(), 4))
-        return img.copy()
+        return rgba.copy()
     
     @staticmethod
-    def arrayToPixmap(img):
+    def rgbaToPixmap(rgba):
         """Np array to Qt pixmap. Assumes an 8-bit RGBA image."""
-        img = img.copy()
-        qimage = PyQt5.QtGui.QImage(img.data, img.shape[1], img.shape[0], 
+        rgba = rgba.copy()
+        qimage = PyQt5.QtGui.QImage(rgba.data, rgba.shape[1], rgba.shape[0], 
                                     PyQt5.QtGui.QImage.Format_RGBA8888)
         qpixmap = PyQt5.QtGui.QPixmap(qimage)
         return qpixmap
@@ -176,7 +214,61 @@ class InSegtAnnotator(annotator.Annotator):
     @staticmethod
     def grayToPixmap(gray):
         """Uint8 grayscale image to Qt pixmap via RGBA image."""
-        gray = np.tile(gray,(4,1,1)).transpose(1,2,0)
-        gray[:,:,3] = 255
-        qpixmap = InSegtAnnotator.arrayToPixmap(gray)
+        rgba = np.tile(gray,(4,1,1)).transpose(1,2,0)
+        rgba[:,:,3] = 255
+        qpixmap = InSegtAnnotator.rgbaToPixmap(rgba)
         return qpixmap
+    
+    
+    
+    
+if __name__ == '__main__':    
+    
+    '''
+    An example on the use of InSegtAnnotator. An image to be may be a rgb 
+    image, but InSegtAnnotator needs to be given its grayscale version. As
+    shown below, this does not prevent the processing function to use rgb 
+    values of the image.
+    '''
+    
+    # defining processing function
+    def processing_function(labels):
+        '''
+        The simplest processing function for rgb images (computes a mean color for
+            each label and assigns pixels to label with color closest to pixel color)
+    
+        Parameters:
+            labels, 2D array with labels as uin8 (0 is background)
+        Returns:
+            segmentation, array of the same size and type as labels
+        
+        Author: vand@dtu.dk
+    
+        '''   
+        N = labels.max()
+        L = 1 if image.ndim==2 else image.shape[2]
+        # mean color for every label
+        colors = np.array([np.mean(image[labels==n],0) for n in range(N+1)])
+        # pixel-to-color distances for all pixels and all labels
+        dist = ((image.reshape((-1 ,1, L)) - colors.reshape((1, 
+                                        N+1, L)))**2).sum(axis=2)
+        empty_labels = np.isnan(dist)
+        if np.any(empty_labels): # handling unlabeled parts
+            dist[empty_labels] = dist[~empty_labels].max()+1 
+        # assigning to min distance
+        segmentation = np.empty(labels.shape, dtype=np.uint8)
+        np.argmin(dist, axis=1, out=segmentation.ravel())
+        return(segmentation)
+    
+    
+    # loading image
+    print('Loading image')
+    image = skimage.data.coffee()
+    image_gray = image if image.ndim==2 else (255*skimage.color.rgb2gray(image)
+                                              ).astype(np.uint8)  
+    
+    print('Showtime')    
+    # showtime
+    app = PyQt5.QtWidgets.QApplication(['']) 
+    ex = InSegtAnnotator(image_gray, processing_function)
+    sys.exit(app.exec_())  

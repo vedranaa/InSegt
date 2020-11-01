@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Demo showing functionality from insegtbasis on CT image of glass fibres.
 Created on Wed Oct 14 12:11:48 2020
 @author: vand@dtu.dk
 """

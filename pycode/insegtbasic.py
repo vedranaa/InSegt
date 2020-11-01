@@ -1,8 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
+""" Basic InSegt functionality. 
+
+This module provides basic InSegt image processing functionallity. It uses 
+intensities from image patches as features for clustering. For clustering it
+uses minibatch k-means from sklarn. Unlabeled pixels have zeros in label 
+images. 
+
+More on insegt method:
+    https://github.com/vedranaa/InSegt
+
+Use:
+    Check the example in demo_insegtbasic.py.
+    
 Created on Sun Mar  1 13:08:33 2020
-@author: vand@dtu.dk
+Author: vand@dtu.dk, 2020
+
+.. _InSegt basic:
+   https://github.com/vedranaa/InSegt/tree/master/pycode
+
 """
 
 import numpy as np
@@ -32,17 +48,30 @@ def image2patches(image, patch_size, stepsize=1):
     out_view = np.lib.stride_tricks.as_strided(image, shape=shp, strides=strd)
     return out_view.reshape(patch_size*patch_size,-1)[:,::stepsize]
 
+def ndimage2patches(im, patch_size, stepsize=1):
+    """Rearrange image patches into columns for N-D image (e.g. RGB image)."""""
+    if im.ndim == 2:
+        return image2patches(im, patch_size, stepsize)
+    else:
+        X ,Y, L = im.shape
+        patches = np.zeros((L*patch_size*patch_size,
+                            (X - patch_size + 1)*(Y - patch_size + 1)))
+        for i in range(L):
+            patches[i*patch_size**2:(i+1)*patch_size**2,:] = image2patches(
+                im[:,:,i], patch_size, stepsize)
+        return patches
+
 def image2assignment(image, patch_size, nr_clusters, nr_training_patches):
     """ Extract, cluster and assign image patches using minibatch k-means."""
-    X, Y = image.shape
-    patches = image2patches(image, patch_size)
+    patches = ndimage2patches(image, patch_size)
     patches_subset = patches[:,np.random.permutation(np.arange(patches.shape[1]))
                              [:nr_training_patches]]
     kmeans = sklearn.cluster.MiniBatchKMeans(n_clusters = nr_clusters, 
             max_iter = 10, batch_size = 3*nr_clusters)
     kmeans.fit(patches_subset.T)
     assignment = kmeans.predict(patches.T)
-    return assignment.reshape((X-patch_size+1,Y-patch_size+1))
+    return assignment.reshape((image.shape[0] - patch_size + 1, 
+                               image.shape[1] - patch_size + 1))
 
 def assignment2biadjacency(assignment, image_shape, patch_size, nr_clusters):
     """ Algorithm 1 from https://arxiv.org/pdf/1809.02226.pdf"""
@@ -90,14 +119,14 @@ def labels2labcol(labels, nr_classes):
     return labcol
 
 def probcol2probabilities(probcol, image_shape):
-    """ Fold columns of probabilities into probability image. """
+    """ Fold columns of probabilities into probability image."""
     p = np.sum(probcol, axis=1)
     nonempty = p>0
     probcol[nonempty] = probcol[nonempty]/(p[nonempty].reshape((-1,1)))
     return probcol.reshape(image_shape + (-1,))
 
 def probcol2labcol(probcol):
-    """ Probability to labels using max approach.  """
+    """ Probability to labels using max approach."""
     p = np.sum(probcol, axis=1)
     nonempty = p>0
     nr_nonempty = np.sum(nonempty)
@@ -123,7 +152,6 @@ def patch_clustering(image, patch_size, nr_training_patches, nr_clusters):
     B = assignment2biadjacency(assignment, image.shape, patch_size, nr_clusters)
     T1, T2 = biadjacency2transformations(B)
     return T1, T2
-
 def two_binarized(labels, T1, T2):
     """InSegt processing function: from labels to segmentation."""
     nr_classes = np.max(labels)    
