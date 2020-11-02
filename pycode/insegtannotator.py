@@ -263,7 +263,7 @@ if __name__ == '__main__':
     
     # loading image
     print('Loading image')
-    image = skimage.data.coffee()
+    image = skimage.data.astronaut()
     image_gray = image if image.ndim==2 else (255*skimage.color.rgb2gray(image)
                                               ).astype(np.uint8)  
     

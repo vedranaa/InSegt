@@ -11,7 +11,7 @@
 * Publish v2 betula borealis.
 
 `InSegt`
-* Add other types of processing function!
+* Add other types of processing functions!
 * Consider making a class `Segmentation`, with a method `Segmentation.processing_function`, which is to be passed to `InSegtAnnotator`.
 
 # Longer-term TODOs

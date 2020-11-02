@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Demo showing functionality from insegtbasis on CT image of glass fibres.
+Here, two functions from insegtbasic are broken down in steps. The function
+insegtbasic.patch_clustering roughly covers the pre-processing, part while the
+function insegtbasic.two_binarized roughly covers incorporating labels.
 Created on Sun Mar  1 13:08:33 2020
 @author: vand@dtu.dk
 """
@@ -12,7 +16,7 @@ import time
 import insegtbasic
 
 # %% Pre-processing
-    
+
 # Reading image and labels.
 image = np.array(PIL.Image.open('../data/glass.png'))
 labels = np.array(PIL.Image.open('../data/glass_labels.png'))
@@ -87,4 +91,4 @@ ax[0,2].set_title('probablitily label 1')
 ax[1,2].imshow(probabilities[:,:,1], vmin=0, vmax=1, cmap = 'jet')
 ax[1,2].set_title('probablitily label 2')
 
-fig.savefig('demo_insegtbasic_explained.png')
+#fig.savefig('demo_insegtbasic_explained.png')
