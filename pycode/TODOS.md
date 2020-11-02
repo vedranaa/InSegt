@@ -10,3 +10,4 @@ InSegtAnnotator
 
 InSegt
 * Add other types of processing function!
+* Consider making a class `Segmentation`, with a method `Segmentation.processing_function`, which is to be passed to `InSegtAnnotator`.
