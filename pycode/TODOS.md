@@ -9,4 +9,4 @@ InSegtAnnotator
 * Publish v2 betula borealis.
 
 InSegt
-* Add other processing function!
+* Add other types of processing function!
