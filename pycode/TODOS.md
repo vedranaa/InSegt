@@ -11,7 +11,7 @@
 * Publish v2 betula borealis.
 
 `InSegt`
-* Add other types of processing functions!
+* Add other types of processing functions! This includes SIFT features, PCA features, Gaussian-derivative features, multiscale features...
 * Consider making a class `Segmentation`, with a method `Segmentation.processing_function`, which is to be passed to `InSegtAnnotator`.
 
 # Longer-term TODOs
