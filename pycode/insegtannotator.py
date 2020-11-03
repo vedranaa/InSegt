@@ -5,8 +5,8 @@
 
 This module contains the InSegtAnnotator class, which is a subclass of the 
 Annotator class from the module annotator. InSegtAnnotator extends Annotator 
-with a segmentation layer. Segmentation is computed from annotations using 
-a generic processing function.  
+with the functionality for interactive segmentation. Segmentation is computed 
+from annotations using a generic processing function.  
 
 
 Use:
@@ -248,9 +248,10 @@ if __name__ == '__main__':
         N = labels.max()
         L = 1 if image.ndim==2 else image.shape[2]
         # mean color for every label
-        colors = np.array([np.mean(image[labels==n],0) for n in range(N+1)])
+        lable_colors = np.array([np.mean(image[labels==n],0) 
+                                      for n in range(N+1)])
         # pixel-to-color distances for all pixels and all labels
-        dist = ((image.reshape((-1 ,1, L)) - colors.reshape((1, 
+        dist = ((image.reshape((-1 ,1, L)) - lable_colors.reshape((1, 
                                         N+1, L)))**2).sum(axis=2)
         empty_labels = np.isnan(dist)
         if np.any(empty_labels): # handling unlabeled parts
