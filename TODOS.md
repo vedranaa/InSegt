@@ -19,7 +19,7 @@ Is this intentional/acceptable?
 
 1. Move functions from 'image_texture_gui.m' such that functions like 'process_image.m' can use identical method of segmentation.
 Currently, a segmentation made in the gui and one in 'process_image' can look very dissimilar using the same dictionary. 
-See 'example_PCA_processing_error.m' for example (change 'build_dictionary(feat_im,dictopt)' to 'build_dictionary(im,dictopt)').
+See 'example_PCA_processing_error.m' attached in the mail from 15/7 for example (change 'build_dictionary(feat_im,dictopt)' to 'build_dictionary(im,dictopt)').
 
 1. In 'image_texture_gui.m' [A] changes opacity (alpha), [C] changes colormap. This is not indicated anywhere in the gui.
 Should it be?
