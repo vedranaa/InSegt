@@ -16,3 +16,5 @@
 
 # Longer-term TODOs
 * Add slice-wise 3D functionality.
+* Add undo (for example using 3-step image buffer)
+* Add freeze label
