@@ -2,6 +2,10 @@
 
 `Annotator`
 * Better option for saving all outputs. Images should be placed in a folder and/or there should be a dialog for folder and filenames.
+* Start annotator from a script
+* Enable pan
+* Fill function
+* Adjust brightness of loaded image and transparency of label
 
 `InSegtAnnotator`
 * Better saving of outputs (inherits from Annotator).
