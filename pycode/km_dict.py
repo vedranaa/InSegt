@@ -28,7 +28,7 @@ def build_km_tree(image, patch_size, branching_factor, number_training_patches, 
     rows, cols = image.shape[0:2]
     channels = 1
     if ( image.ndim > 2 ):
-        channels = image.shape[2]
+        channels, rows, cols = image.shape
     
     total_patches = (rows-patch_size+1)*(cols-patch_size+1)
     if (number_training_patches > total_patches ):
@@ -67,7 +67,7 @@ def search_km_tree(image, tree, branching_factor, normalization=False):
     rows, cols = image.shape[0:2]
     channels = 1
     if ( image.ndim > 2 ):
-        channels = image.shape[2]
+        channels, rows, cols = image.shape
     
     number_nodes = tree.shape[0]
     patch_size = int(np.sqrt(tree.shape[1]/channels))
