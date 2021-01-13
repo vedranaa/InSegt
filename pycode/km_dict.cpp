@@ -434,6 +434,7 @@ extern "C" void search_km_tree(const double *I, int rows, int cols, int channels
                               int branch_fac, bool normalize, int *A) 
 {
     
+
   // tree struct
   tree_st Tree;
   Tree.tree_data = tree;
@@ -451,11 +452,17 @@ extern "C" void search_km_tree(const double *I, int rows, int cols, int channels
   Im.layers = channels;
   Im.n_pix = Im.rows*Im.cols;
   // Set all values in tree to -1
+  int* A_tmp = new int[rows*cols];
   for (int i = 0; i < rows*cols; i++ )
-    *(A + i) = -1;
+    *(A_tmp + i) = -1;
 
+//   for (int i = 0; i < rows*cols; i++ )
+//     *(A + i) = -1;
   // Search the tree using the C++ subroutine
-  search_image(Im, Tree, A, normalize);
+  search_image(Im, Tree, A_tmp, normalize);
+  for (int i = 0; i < rows*cols; i++ )
+    *(A + i) = *(A_tmp + i);
+  delete[] A_tmp;
 }
 
 
@@ -468,8 +475,9 @@ extern "C" void prob_im_to_dict(const int *A, int rows, int cols, const double *
     int n_dpix = patch_size*patch_size*n_labels;
     int n_pix = rows*cols;
     // Set all values in tree to -1
+    double* D_tmp = new double[n_dpix*n_elem];
     for (int i = 0; i < n_dpix*n_elem; i++ )
-      *(D + i) = 0;
+      *(D_tmp + i) = 0;
 
     
     double* dict_count = new double[n_elem];
@@ -492,7 +500,7 @@ extern "C" void prob_im_to_dict(const int *A, int rows, int cols, const double *
                 for ( int ii = -patch_h; ii < patch_h + 1; ii++ ){
                     id_P = id_Pk + (i+ii)*cols;
                     for ( int jj = -patch_h; jj < patch_h + 1; jj++ ){
-                        D[id_D] += P[id_P + jj];
+                        D_tmp[id_D] += P[id_P + jj];
                         id_D++;
                     }
                 }
@@ -506,11 +514,15 @@ extern "C" void prob_im_to_dict(const int *A, int rows, int cols, const double *
         c_iter = i*n_dpix;
         if ( dict_count[i] > 0.0 ){
             for ( int j = 0; j < n_dpix; j++ ){
-                *(D + c_iter + j) /= dict_count[i];
+                *(D_tmp + c_iter + j) /= dict_count[i];
             }
         }
     }
     
+    for (int i = 0; i < n_dpix*n_elem; i++ )
+        *(D + i) = *(D_tmp + i);
+
+    delete[] D_tmp;
     delete[] dict_count;
 }
 
@@ -543,9 +555,10 @@ extern "C" void dict_to_prob_im_opt(const int *A, int rows, int cols, const doub
     int n_pix = rows*cols; // number of pixels in image
     int n_patch = patch_size*patch_size; // number pixels in patch
     
+    double* P_tmp = new double[rows*cols*n_label];
     // Set output memory to zeros
     for ( int i = 0; i < rows*cols*n_label; i++ ){
-        P[i] = 0;
+        P_tmp[i] = 0;
     }
     
     // Assign probabilities to image
@@ -559,7 +572,7 @@ extern "C" void dict_to_prob_im_opt(const int *A, int rows, int cols, const doub
                 for ( int ii = -patch_h; ii < patch_h + 1; ii++ ){
                     id_P = id_Pk + (i+ii)*cols;
                     for ( int jj = -patch_h; jj < patch_h + 1; jj++ ){
-                        P[id_P + jj] += D[id_D];
+                        P_tmp[id_P + jj] += D[id_D];
                         id_D += 1;
                     }
                 }
@@ -574,17 +587,22 @@ extern "C" void dict_to_prob_im_opt(const int *A, int rows, int cols, const doub
         for ( int j = 0; j < cols; j++ ){
             s = 0;
             for ( int k = 0; k < n_label; k++ ){
-                s += P[id_A + k*n_pix];
+                s += P_tmp[id_A + k*n_pix];
             }
             if ( s>0 ){
                 s_inv = 1/s;
                 for ( int k = 0; k < n_label; k++ ){
-                    P[id_A + k*n_pix] *= s_inv;
+                    P_tmp[id_A + k*n_pix] *= s_inv;
                 }
             }
             id_A++;
         }
     }
+    for ( int i = 0; i < rows*cols*n_label; i++ ){
+        P[i] = P_tmp[i];
+    }
+    delete[] P_tmp;
+
 }
 
 

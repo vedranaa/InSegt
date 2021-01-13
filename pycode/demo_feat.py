@@ -32,12 +32,12 @@ image = skimage.io.imread(filename)
 #%% COMMON PART
 
 int_patch_size = 15
-branching_factor = 5
+branching_factor = 6
 number_layers = 5
 number_training_patches = 35000
 normalization = False
 
-patch_size_feat = 9
+patch_size_feat = 5
 n_train = 50000
 n_keep = 10
 order_keep = (True, True, True)
