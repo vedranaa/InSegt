@@ -29,10 +29,17 @@ print('Loading image')
 filename = '../data/nerve_im_scale.png'
 image = skimage.io.imread(filename)
 
+#%% EXAMPLE 3: randen image
+
+## loading image
+print('Loading image')
+filename = '../data/bee_eye.png'
+image = (skimage.color.rgb2gray(skimage.io.imread(filename)[:,:,0:3])*255).astype(np.uint8)
+
 #%% COMMON PART
 
 int_patch_size = 15
-branching_factor = 6
+branching_factor = 5
 number_layers = 5
 number_training_patches = 35000
 normalization = False
@@ -45,7 +52,7 @@ order_keep = (True, True, True)
 image_float = image.astype(np.float)/255
 
 # Compute feature image
-feat_im, vec, mean_patch = feat_seg.get_pca_feat(image_float, patch_size_feat, n_train, n_keep, order_keep)
+feat_im, vec, mean_patch = feat_seg.get_pca_feat(image_float, patch_size_feat, n_train, n_keep, order_keep, sigma = -1)
 feat_im = np.asarray(feat_im.transpose(2,0,1), order='C')
 
 # Build tree
