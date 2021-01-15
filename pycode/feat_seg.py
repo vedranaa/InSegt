@@ -67,33 +67,35 @@ def get_feat_vec(image, patch_size, n_train, n_keep = 10):
     mean_patch = np.mean(P,axis = 1)
     return vec, mean_patch
 
-def get_im_dev(image, order_keep = (True, True, True)):
-    # Gaussian filters
-    # g, dg, ddg = get_gauss_dev(sigma)
-    g = np.array([[1,1,1]])
-    dg = np.array([[1,0,-1]])
-    ddg = np.array([[1,-2,1]])
-    
-    # image and derivatives
+def get_im_dev(image, order_keep = (True, True, True), sigma = -1):
     I = []
-    if ( order_keep[0] ):
-        I.append(np.asarray(image, order='C'))
-    if ( order_keep[1] ):
-        I.append(np.asarray(scipy.ndimage.convolve(image, dg), order='C')) # Ix
-        I.append(np.asarray(scipy.ndimage.convolve(image, dg.T), order='C')) # Iy
-    if ( order_keep[2] ):
-        I.append(np.asarray(scipy.ndimage.convolve(image, ddg), order='C')) # Ixx
-        I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), dg.T), order='C')) # Ixy
-        I.append(np.asarray(scipy.ndimage.convolve(image, ddg.T), order='C')) # Iyy
-    # if ( order_keep[0] ):
-    #     I.append(np.asarray(image, order='C'))
-    # if ( order_keep[1] ):
-    #     I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), g.T), order='C')) # Ix
-    #     I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, g), dg.T), order='C')) # Iy
-    # if ( order_keep[2] ):
-    #     I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, ddg), g.T), order='C')) # Ixx
-    #     I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), dg.T), order='C')) # Ixy
-    #     I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, g), ddg.T), order='C')) # Iyy
+    if ( sigma <= 0 ):
+        g = np.array([[1,1,1]])
+        dg = np.array([[1,0,-1]])
+        ddg = np.array([[1,-2,1]])
+        
+        # image and derivatives
+        if ( order_keep[0] ):
+            I.append(np.asarray(image, order='C'))
+        if ( order_keep[1] ):
+            I.append(np.asarray(scipy.ndimage.convolve(image, dg), order='C')) # Ix
+            I.append(np.asarray(scipy.ndimage.convolve(image, dg.T), order='C')) # Iy
+        if ( order_keep[2] ):
+            I.append(np.asarray(scipy.ndimage.convolve(image, ddg), order='C')) # Ixx
+            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), dg.T), order='C')) # Ixy
+            I.append(np.asarray(scipy.ndimage.convolve(image, ddg.T), order='C')) # Iyy
+    else:
+        # Gaussian filters
+        g, dg, ddg = get_gauss_dev(sigma)
+        if ( order_keep[0] ):
+            I.append(np.asarray(image, order='C'))
+        if ( order_keep[1] ):
+            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), g.T), order='C')) # Ix
+            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, g), dg.T), order='C')) # Iy
+        if ( order_keep[2] ):
+            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, ddg), g.T), order='C')) # Ixx
+            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), dg.T), order='C')) # Ixy
+            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, g), ddg.T), order='C')) # Iyy
     # Normalize to have same standard deviation
     std_im = np.std(image)
     for i in range(0,len(I)):
@@ -103,11 +105,14 @@ def get_im_dev(image, order_keep = (True, True, True)):
 
 
 def get_gauss_dev(sigma, size=4):
-    x = np.c_[np.arange(-np.ceil(size*size),np.ceil(size*size)+1)].T
-    g = np.exp(-x**2/(2*size*size))
+    s = np.ceil(np.max([sigma*size, size]))
+    x = np.c_[np.arange(-s,s+1)].T
+    g = np.exp(-x**2/(2*sigma*sigma))
     g /= np.sum(g)
-    dg = -x/(size*size)*g
-    ddg = -1/(size*size)*g -x/(size*size)*dg
+    dg = -x/(sigma*sigma)*g
+    ddg = -1/(sigma*sigma)*g -x/(sigma*sigma)*dg
+    dg = dg/np.max(dg)
+    ddg = -ddg/np.min(ddg)
     return g, dg, ddg
 
 
@@ -155,8 +160,8 @@ def get_pca_feat_im(I, vec, mean_patch, order_keep = (True, True, True)):
     return feat_im
 
 
-def get_pca_feat(im, patch_size = None, n_train = None, n_keep = None, order_keep = (True, True, True), vec = None, mean_patch = None):
-    I = get_im_dev(im, order_keep = order_keep)
+def get_pca_feat(im, patch_size = None, n_train = None, n_keep = None, order_keep = (True, True, True), vec = None, mean_patch = None, sigma = -1):
+    I = get_im_dev(im, order_keep = order_keep, sigma = sigma)
     if ( vec == None ):
         vec = []
         mean_patch = []
