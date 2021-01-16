@@ -16,6 +16,32 @@ lib = ctypes.cdll.LoadLibrary(libfile)
 
 
 def get_feat_vec(image, patch_size, n_train, n_keep = 10):
+    '''
+    Function to compute PCA features from image patches. Pixels in the image 
+    patches are used as feature vectors in a patch_size x patch_size dimensional
+    space, and the PCA is used for reducing the dimensionality of this space.
+
+    Parameters
+    ----------
+    image : numpy array
+        2D image with variable number of channels.
+    patch_size : integer
+        Side length of patch.
+    n_train : integer
+        Number of patches used for training the kmtree. If the number exceeds 
+        the total number of patches in the image, then the trainin is done on 
+        all possible patches from the image.
+    n_keep : integer, optional
+        Number of features to keep for each derivative image. The default is 10.
+
+    Returns
+    -------
+    vec : numpy array
+        PCA vectors.
+    mean_patch : numpy array
+        Mean patch to be used for computing PCA features.
+
+    '''
 
     # Extract patches and put a random subset of n_train into an array
     r,c = image.shape[:2]
@@ -68,6 +94,30 @@ def get_feat_vec(image, patch_size, n_train, n_keep = 10):
     return vec, mean_patch
 
 def get_im_dev(image, order_keep = (True, True, True), sigma = -1):
+    '''
+    Computes image derivatives and returns a list of derivatives
+
+    Parameters
+    ----------
+    image : numpy array
+        2D image with variable number of channels.
+    order_keep : tuple of bool, optional
+        Determines if image derivatives should be computed. Derivatives are 
+        computed according to:
+          if order_keep[0] == True then zeroth order image included (original) 
+          if order_keep[1] == True then first order images included (dI/dx and dI/dy) 
+          if order_keep[2] == True then second order image included (d2I/dx2, d2I/(dxdy), d2I/dy2) 
+        The default is (True, True, True).
+    sigma : float, optional
+        Standard deviation of derivative. If sigma <= 0 then central difference 
+        derivation is done. The default is -1.
+
+    Returns
+    -------
+    I : list of numpy arrays
+        List of image derivatives.
+
+    '''
     I = []
     if ( sigma <= 0 ):
         g = np.array([[1,1,1]])
@@ -105,6 +155,26 @@ def get_im_dev(image, order_keep = (True, True, True), sigma = -1):
 
 
 def get_gauss_dev(sigma, size=4):
+    '''
+    Computes gaussian filters.
+
+    Parameters
+    ----------
+    sigma : float
+        Standard deviation of Gaussian.
+    size : Integer, optional
+        Filter kernel size is sigma*size and never smaller than size. The default is 4.
+
+    Returns
+    -------
+    g : numpy array
+        2D row array of Gaussian.
+    dg : numpy array
+        2D row array of first order derivative of Gaussian.
+    ddg : numpy array
+        2D row array of second order derivative of Gaussian.
+
+    '''
     s = np.ceil(np.max([sigma*size, size]))
     x = np.c_[np.arange(-s,s+1)].T
     g = np.exp(-x**2/(2*sigma*sigma))
@@ -119,6 +189,31 @@ def get_gauss_dev(sigma, size=4):
 
 
 def get_pca_feat_im(I, vec, mean_patch, order_keep = (True, True, True)):
+    '''
+    Computes PCA features for an image.
+
+    Parameters
+    ----------
+    I : list of numpy arrays
+        List of image derivatives.
+    vec : numpy array
+        PCA vectors.
+    mean_patch : numpy array
+        Mean patch to be used for computing PCA features.
+    order_keep : tuple of bool, optional
+        Determines if image derivatives should be computed. Derivatives are 
+        computed according to:
+          if order_keep[0] == True then zeroth order image included (original) 
+          if order_keep[1] == True then first order images included (dI/dx and dI/dy) 
+          if order_keep[2] == True then second order image included (d2I/dx2, d2I/(dxdy), d2I/dy2) 
+        The default is (True, True, True).
+
+    Returns
+    -------
+    feat_im : numpy array
+        feature image of size rows x cols x number of features.
+
+    '''
     # python function for building km_tree
     py_vec_to_feat_im = lib.vec_to_feat_im
     
@@ -161,8 +256,50 @@ def get_pca_feat_im(I, vec, mean_patch, order_keep = (True, True, True)):
 
 
 def get_pca_feat(im, patch_size = None, n_train = None, n_keep = None, order_keep = (True, True, True), vec = None, mean_patch = None, sigma = -1):
+    '''
+    General function for computing PCA features. If vec and mean_patch is 
+    supplied, then these are not computed. Otherwise the vec and mean_patch is 
+    initially computed.
+
+    Parameters
+    ----------
+    image : numpy array
+        2D image with variable number of channels.
+    patch_size : integer
+        Side length of patch.
+    n_train : integer
+        Number of patches used for training the kmtree. If the number exceeds 
+        the total number of patches in the image, then the trainin is done on 
+        all possible patches from the image.
+    n_keep : integer, optional
+        Number of features to keep for each derivative image. The default is 10.
+    order_keep : tuple of bool, optional
+        Determines if image derivatives should be computed. Derivatives are 
+        computed according to:
+          if order_keep[0] == True then zeroth order image included (original) 
+          if order_keep[1] == True then first order images included (dI/dx and dI/dy) 
+          if order_keep[2] == True then second order image included (d2I/dx2, d2I/(dxdy), d2I/dy2) 
+        The default is (True, True, True).
+    vec : numpy array
+        PCA vectors.
+    mean_patch : numpy array
+        Mean patch to be used for computing PCA features.
+    sigma : float
+        Standard deviation of Gaussian.
+
+    Returns
+    -------
+    feat_im : numpy array
+        feature image of size rows x cols x number of features.
+    vec : numpy array
+        PCA vectors.
+    mean_patch : numpy array
+        Mean patch to be used for computing PCA features.
+
+    '''
+
     I = get_im_dev(im, order_keep = order_keep, sigma = sigma)
-    if ( vec == None ):
+    if ( vec == None or mean_patch == None ):
         vec = []
         mean_patch = []
         for im in I:
@@ -175,6 +312,33 @@ def get_pca_feat(im, patch_size = None, n_train = None, n_keep = None, order_kee
 
 
 def get_pca_feat_slow(I, vec, mean_patch, order_keep = (True, True, True), sigma = 1):
+    '''
+    Computes PCA features for an image.
+
+    Parameters
+    ----------
+    I : list of numpy arrays
+        List of image derivatives.
+    vec : numpy array
+        PCA vectors.
+    mean_patch : numpy array
+        Mean patch to be used for computing PCA features.
+    order_keep : tuple of bool, optional
+        Determines if image derivatives should be computed. Derivatives are 
+        computed according to:
+          if order_keep[0] == True then zeroth order image included (original) 
+          if order_keep[1] == True then first order images included (dI/dx and dI/dy) 
+          if order_keep[2] == True then second order image included (d2I/dx2, d2I/(dxdy), d2I/dy2) 
+        The default is (True, True, True).
+    sigma : float
+        Standard deviation of Gaussian.
+
+    Returns
+    -------
+    feat_im : numpy array
+        feature image of size rows x cols x number of features.
+
+    '''
     # python function for building km_tree
     py_vec_to_feat_im = lib.vec_to_feat_im_slow
     

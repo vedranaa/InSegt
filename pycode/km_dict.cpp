@@ -1,28 +1,14 @@
 /*=================================================================
-* syntax: T = build_km_tree(I, M, b, t, L, n); OR T = build_km_tree(I, M, b, t, L);
-*
-* build_km_tree  - build km-tree matrix from image
-* 			
-* 			Input: 	- I: X-by-Y intensity image
-* 					- M: patch size (length of edge)
-*                   - L: number of dictionary layers. This parameter is limited 
-*                        such that the average number of patches in a leafnode is 
-*                        greater than five
-*                   - b: branching factor
-*                   - t: number of training patches
-*                   - n: normalization (true or false), defaults to false
-*
-* 			Output: - T: MMl-by-K matrix where l is the number of layers 
-*                        in the image (1 for grayscale and 3 for RGB)
-*                        and K is the number of nodes in the tree.
-*
-*   Compile:
-*   g++ -fPIC -shared -O3 -o km_dict_lib.so km_dict.cpp
-*
-*
-*
-* 			Author: Anders Dahl, abda@dtu.dk, december 2020.
-*=================================================================*/
+
+Functions for building and searching kmtree
+
+Compile:
+g++ -fPIC -shared -O3 -o km_dict_lib.so km_dict.cpp
+
+
+
+ 			Author: Anders Dahl, abda@dtu.dk, december 2020.
+=================================================================*/
 
 #include <vector>
 #include <iostream>
@@ -173,10 +159,8 @@ void k_means( vector<im_patch>& patches, tree_st& tree, int f, int t, int node )
         // initialize the center positions
         vector<int> r_id = randperm(t-f, tree.branch_fac); // indices of random patches
         for (  int i = 0; i < tree.branch_fac; i++ ){
-//             printf("random id %d\n", f+r_id[i]);
             set_values(tree, patches[f+r_id[i]], node+i);
         }
-//         printf("values set\n");
 
         // run clutering for 30 iterations - only little change happens after 10 iterations
         for ( int n_run = 0; n_run < 30; n_run++){
@@ -240,7 +224,6 @@ int get_to( vector<im_patch>& patches, int id )
 void build_km_tree ( im_st& im, tree_st& tree, int n_train, bool normalize ) {
     // allocate memory for the image patches
     double* im_patch_data = new double[n_train*tree.M*tree.M*im.layers];
-//     printf("Allocate im_patch_data\n");
     
     int rows_c = im.rows-tree.M+1, cols_c = im.cols-tree.M+1; // number of rows and cols within sampling area
     int n_im_patches = rows_c*cols_c; // number of pixels in the image for sampling - inside boundary
@@ -249,13 +232,11 @@ void build_km_tree ( im_st& im, tree_st& tree, int n_train, bool normalize ) {
     if ( n_im_patches < n_train ){
         n_train = n_im_patches;
     }
-//     printf("n_train %d\n",n_train);
     
     vector<int> r_id = randperm(n_im_patches, n_train); // indices of random patches
     vector<im_patch> patches; // vector of image patches
     patches.resize(n_train); // allocate memory
     
-//     printf("patches assigned\n");
     int r, c, idx = 0; // variables used for sampling the image
     // sample image patches
     for (int i = 0; i < n_train; i++ )
@@ -268,8 +249,6 @@ void build_km_tree ( im_st& im, tree_st& tree, int n_train, bool normalize ) {
         idx += tree.n_dim; // step number of patch pixels forward
     }
     
-//     printf("Image patches sampled\n");
-    
     // k-means tree
     int n_layer = (int)ceil(log((double)tree.n_nodes)/log((double)tree.branch_fac)); // number of layers in the tree
     int n_in_layer; // number of nodes in layer
@@ -279,7 +258,6 @@ void build_km_tree ( im_st& im, tree_st& tree, int n_train, bool normalize ) {
     // go through the layers in the tree
     for (int i = 0; i < n_layer; i++ )
     {
-//         printf("Layer %d\n",i);
         t = 0; // start at 0
         n_in_layer = (int)pow((double)tree.branch_fac,i); // number of nodes in current layer of the tree
         sort(patches.begin(), patches.end()); // sort the patches according to their current id
@@ -287,7 +265,6 @@ void build_km_tree ( im_st& im, tree_st& tree, int n_train, bool normalize ) {
         {
             f = t; // patch j from
             t = get_to(patches,j); // patch j to
-//             printf("from %d to %d\n",f,t);
             // check that the node does not exceed the size of the tree
             if ( node + tree.branch_fac <= tree.n_nodes ){
                 k_means( patches, tree, f, t, node );
@@ -303,7 +280,24 @@ void build_km_tree ( im_st& im, tree_st& tree, int n_train, bool normalize ) {
 }
 
 
-// (I, M, b, t, L, n)
+/*=============================================================================
+Build kmtree
+
+Input:
+    I : input image
+    rows : number of rows in I
+    cols : number of cols in I
+    channels : number of channels in I
+    patch_size : size of image patches. Must be positive and odd.
+    n_layer : number of layers in kmtree
+    branch_fac : branching factor of kmtree
+    n_train : number of training patches. If this number exceeds total number
+        of patches in the image, then the total number of patches is used.
+    normalize : determines if hte patches should be normalized.
+    tree : resulting tree (output)
+
+=============================================================================*/
+
 
 extern "C" void build_km_tree(const double *I, int rows, int cols, int channels, int patch_size, int n_layer, 
                               int branch_fac, int n_train, bool normalize, double *tree) 
@@ -323,7 +317,7 @@ extern "C" void build_km_tree(const double *I, int rows, int cols, int channels,
         }
         n = n_tmp;
     }
-//     n = (pow(branch_fac,n_layer+1)-branch_fac)/(branch_fac-1);
+    // n = (pow(branch_fac,n_layer+1)-branch_fac)/(branch_fac-1);
     
     printf("Number of nodes in resulting tree: %d in %d layers.\n", n, n_layer);
     
@@ -356,23 +350,6 @@ extern "C" void build_km_tree(const double *I, int rows, int cols, int channels,
 }
 
 
-
-
-/*=================================================================
-* syntax: A = search_km_tree(I, T, b, n); OR A = search_km_tree(I, T, b);
-*
-* serach_km_tree  - build assignment image from intensity image
-* 			
-* 			Input: 	- I: X-by-Y image
-* 					- T: MMl-by-K tree matrix  where l is the number of layers 
-*                        in the image (1 for grayscale and 3 for RGB)
-*                   - b: brancing factor
-*                   - n: normalization (true or false), defaults to false
-*
-* 			Output: - A: X-by-Y assignment matrix
-*
-* 			Author: Anders Dahl, abda@dtu.dk, december 2020.
-*=================================================================*/
 
 
 
@@ -429,6 +406,25 @@ void search_image(im_st& im, tree_st& tree, int *A, bool& normalize)
 
 
 
+/*=================================================================
+serach_km_tree  - build assignment image from intensity image
+
+Input:
+    I : input image
+    rows : number of rows in I
+    cols : number of cols in I
+    channels : number of channels in I
+    tree : kmtree - 2D array
+    patch_size : size of image patches. Must be positive and odd.
+    n_nodes : total number of nodes in kmtree
+    branch_fac : branching factor of kmtree
+    normalize : determines if hte patches should be normalized.
+    A : assignment image (output)
+
+Author: Anders Dahl, abda@dtu.dk, december 2020.
+*=================================================================*/
+
+
 
 extern "C" void search_km_tree(const double *I, int rows, int cols, int channels, double *tree, int patch_size, int n_nodes, 
                               int branch_fac, bool normalize, int *A) 
@@ -456,8 +452,6 @@ extern "C" void search_km_tree(const double *I, int rows, int cols, int channels
   for (int i = 0; i < rows*cols; i++ )
     *(A_tmp + i) = -1;
 
-//   for (int i = 0; i < rows*cols; i++ )
-//     *(A + i) = -1;
   // Search the tree using the C++ subroutine
   search_image(Im, Tree, A_tmp, normalize);
   for (int i = 0; i < rows*cols; i++ )
@@ -468,7 +462,22 @@ extern "C" void search_km_tree(const double *I, int rows, int cols, int channels
 
 
 
-// D = prob_im_to_dict_cpp(assignment, label_im, patch_size)
+/*=============================================================================
+prob_im_to_dict  - computes node-wise probability from an image of probabilities
+                   and an assignment image
+
+Input:
+    A : assignment image
+    rows : number of rows in A
+    cols : number of cols in A
+    P : probability image of size rows x cols x n_labels
+    n_labels : number of labels
+    patch_size : size of image patches. Must be positive and odd.
+    n_elem : number of elements in dictionary
+    D : dictionary probabilities
+
+Author: Anders Dahl, abda@dtu.dk, december 2020.
+*============================================================================*/
 extern "C" void prob_im_to_dict(const int *A, int rows, int cols, const double *P, int n_labels, int patch_size, int n_elem, double *D)
 {
 
@@ -606,6 +615,23 @@ extern "C" void dict_to_prob_im_opt(const int *A, int rows, int cols, const doub
 }
 
 
+/*=================================================================
+* syntax: dict_to_prob_im(const int *A, int rows, int cols, const double *D, int patch_size, int n_label, double *P)
+*
+* set_probabilities_cpp - sets the probabilities based on assignment image 
+*                         and probabilities of dictionary elements
+* 			
+* Input: 
+*   - A: rows-by-cols assignemnt image
+*   - rows: number of rows in assignemnt
+*   - cols: number of cols in assignemnt
+*   - D: dictionary probabilities patch_size*patch_size*n_label-by-n_dictionary_elements
+*   - patch_size: side length of patch (should be odd)
+*   - n_label: number of labels
+*   - P: output probability image of size rows-by-columns-by-n_label
+*
+* 			Author: Anders Dahl, abda@dtu.dk, December 2020.
+*=================================================================*/
 
 extern "C" void dict_to_prob_im(const int *A, int rows, int cols, const double *D, int patch_size, int n_label, double *P) 
 {
@@ -666,6 +692,7 @@ void get_patch(const double *I, int cols, int r, int c, int patch_size, int patc
     }
 }
 
+// Function to compute the minimum distance between patch and patches in C
 int min_dist(const double *C, double *patch, int n_patch, int n_clust){
     double d, min_d = 10e10, diff;
     int idx = 0, d_idx = 0;
@@ -683,6 +710,20 @@ int min_dist(const double *C, double *patch, int n_patch, int n_clust){
     return d_idx;
 }
 
+/*=============================================================================
+im_to_assignment  - computes assignment image from image and cluster centers
+
+Input:
+    I : input image
+    rows : number of rows in I
+    cols : number of cols in I
+    C : cluster centers
+    patch_size : size of image patches. Must be positive and odd.
+    n_clust : number of cluster centers
+    A : assignment image (output)
+
+Author: Anders Dahl, abda@dtu.dk, december 2020.
+*============================================================================*/
 extern "C" void im_to_assignment(const double *I,  int rows, int cols, const double *C, int patch_size, int n_clust, int *A){
     int patch_h = floor( patch_size / 2 ); // half patch size minus 0.5
     int n_patch = patch_size*patch_size; // number pixels in patch

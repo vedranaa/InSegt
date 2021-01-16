@@ -14,6 +14,44 @@ lib = ctypes.cdll.LoadLibrary(libfile)
 
 
 def build_km_tree(image, patch_size, branching_factor, number_training_patches, number_layers, normalization=False):
+    '''
+    Builds a k-means search tree from image patches. Image patches of size 
+    patch_size are extacted, and the tree is build by hierarchical k-means where 
+    k is the branching_factor. To reduce processing time, the tree is build from 
+    number_training_patches. If this exceeds the the total number of patches in 
+    the image, then the trainin is done on all possible patches from the image.
+    The resulting kmeans tree is a 2D array.
+
+    Parameters
+    ----------
+    image : numpy array
+        2D image with variable number of channels.
+    patch_size : integer
+        Side length of patch.
+    branching_factor : integer
+        Branching of kmtree.
+    number_training_patches : integer
+        Number of patches used for training the kmtree. If the number exceeds 
+        the total number of patches in the image, then the trainin is done on 
+        all possible patches from the image.
+    number_layers : integer
+        Number of layeres in the kmtree.
+    normalization : Boolean, optional
+        Normalize patches to unit length. The default is False.
+
+    Returns
+    -------
+    tree : numpy array
+        kmtree which is a 2D array. Each row is the average patch intensities 
+        for the node. The number of column elements are patch_size x patch_size x
+        channels in the image.
+
+    '''
+    # Check patch size input
+    if ( patch_size < 0 or patch_size%2 != 1 ):
+        print('Patch size must be positive and odd!')
+        return -1
+    
     
     # python function for building km_tree
     py_km_tree = lib.build_km_tree
@@ -52,6 +90,32 @@ def build_km_tree(image, patch_size, branching_factor, number_training_patches, 
 
 
 def search_km_tree(image, tree, branching_factor, normalization=False):
+    '''
+    Search kmtree for all patches in the image to create an assignment image. 
+    The assignment image is an image of indicies of closest kmtree node for 
+    each pixel.
+    
+    Parameters
+    ----------
+    image : numpy array
+        2D image.
+    tree : numpy array
+        kmtree which is a 2D array. Each row is the average patch intensities 
+        for the node.
+       DESCRIPTION.
+    branching_factor : integer
+        Branching of kmtree.
+    normalization : Boolean, optional
+        Normalize patches to unit length. The default is False.
+
+    Returns
+    -------
+    A : numpy array
+        Assignment image of the same rows and cols as the input image.
+    number_nodes : integer
+        Number of nodes in kmtree.
+
+    '''
     # say where to look for the function
     py_search_km_tree = lib.search_km_tree
     # say which inputs the function expects
@@ -82,7 +146,30 @@ def search_km_tree(image, tree, branching_factor, normalization=False):
 
 
 def improb_to_dictprob(A, P, number_nodes, patch_size):
+    '''
+    Taking image probabilities and assigning them to dictionary probabilities 
+    according to an assignment image A.
 
+    Parameters
+    ----------
+    A : numpy array
+        Assignment image with the same rows and cols as the input image.
+    P : numpy array
+        Probability image with the same rows and cols as the image and channels
+        the same as number of labels in the iamge.
+    number_nodes : integer
+        Number of nodes in kmtree.
+    patch_size : integer
+        Side length of patch. Patch size is used for determining number of labels.
+
+    Returns
+    -------
+    D : numpy array
+        Dictionary probabilities. Each row corresponds to the kmtree node and 
+        the cols encodes the pixelwise probability. There are patch_size x 
+        patch_size x number of labels.
+
+    '''
     # say where to look for the function
     py_prob_to_dict = lib.prob_im_to_dict
     # say which inputs the function expects
@@ -109,17 +196,17 @@ def improb_to_dictprob(A, P, number_nodes, patch_size):
 
 def dictprob_to_improb(A, D, patch_size):
     '''
-    
+    Dictionary probabilities to iamge probabilities.
 
     Parameters
     ----------
     A : numpy array
         Assignment image.
     D : numpy array
-        dictionary probabilities. Each column contains patch_size x patch_size 
+        Dictionary probabilities. Each column contains patch_size x patch_size 
         x layers probabilities.
-    patch_size : int
-        side length of patch.
+    patch_size : integer
+        Side length of patch.
 
     Returns
     -------
