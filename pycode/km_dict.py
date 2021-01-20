@@ -9,7 +9,9 @@ Created on Wed Dec 30 17:42:18 2020
 import ctypes
 import numpy.ctypeslib as ctl 
 import numpy as np
-libfile = 'km_dict_lib.so'
+import os
+libfile = os.path.dirname(__file__) + '/km_dict_lib.so'
+print(libfile)
 lib = ctypes.cdll.LoadLibrary(libfile)
 
 
