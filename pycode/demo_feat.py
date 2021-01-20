@@ -66,12 +66,12 @@ number_repetitions = 2
 
 def processing_function(labels):
     r,c = labels.shape
-    l = np.max(labels)
+    l = np.max(labels)+1
     label_image = np.zeros((r,c,l))
     for k in range(number_repetitions):
-        for i in range(0,l):
+        for i in range(1,l):
             label_image[:,:,i] = (labels == i).astype(float)
-        D = km_dict.improb_to_dictprob(A, label_image, number_nodes, int_patch_size) # Dictionary
+        D = km_dict.improb_to_dictprob(A, label_image[:,:,1:], number_nodes, int_patch_size) # Dictionary
         P = km_dict.dictprob_to_improb(A, D, int_patch_size) # Probability map
         labels = np.argmax(P,axis=2) + 1 # Segmentation
     return labels
