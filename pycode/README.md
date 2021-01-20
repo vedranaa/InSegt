@@ -32,3 +32,7 @@ Input image | User labelings | Segmentation result | Screenshot
 clicks, draws, and keyboard input. Help is accessed by pressing **H**. Built-in example uses an image from `skimage.data`.
 
 * `insegtannotator.py`, a module containing `InSegtAnnotator` class, which is a subclass of `Annotator` extended with the functionality for interactive segmentation. To use `InsegtAnnotator` you need a processing function that given labels (annotations) returns a  segmentation.  Built-in example uses an image from `skimage.data` and a processing function based on a mean color for every label, and a pixel-to-color distance.
+
+* `demo_km.py`, a demo showing the use of k-means clustering. Uses the module `km_dict.py`, which relies on `km_dict.cpp` compiled into `km_dict_lib.so`.
+
+* `demo_feat.py`, a demo showing feature-based segmentation. Uses the module `feat_seg.py` which relies on `image_featt.cpp` compiled into `image_feat_lib.so`.
