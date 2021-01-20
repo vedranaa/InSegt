@@ -38,10 +38,10 @@ image = (skimage.color.rgb2gray(skimage.io.imread(filename)[:,:,0:3])*255).astyp
 
 #%% COMMON PART
 
-int_patch_size = 15
-branching_factor = 5
+int_patch_size = 9
+branching_factor = 6
 number_layers = 5
-number_training_patches = 35000
+number_training_patches = 200000
 normalization = False
 
 patch_size_feat = 5
@@ -64,17 +64,16 @@ A, number_nodes = km_dict.search_km_tree(feat_im, T, branching_factor, normaliza
 number_repetitions = 2
 
 
-
 def processing_function(labels):
     r,c = labels.shape
-    l = np.max(labels)+1
+    l = np.max(labels)
     label_image = np.zeros((r,c,l))
     for k in range(number_repetitions):
-        for i in range(1,l):
+        for i in range(0,l):
             label_image[:,:,i] = (labels == i).astype(float)
         D = km_dict.improb_to_dictprob(A, label_image, number_nodes, int_patch_size) # Dictionary
         P = km_dict.dictprob_to_improb(A, D, int_patch_size) # Probability map
-        labels = np.argmax(P,axis=2) # Segmentation
+        labels = np.argmax(P,axis=2) + 1 # Segmentation
     return labels
 
 print('Showtime')    
@@ -83,3 +82,16 @@ print('Showtime')
 app = insegtannotator.PyQt5.QtWidgets.QApplication(sys.argv) 
 ex = insegtannotator.InSegtAnnotator(image, processing_function)
 sys.exit(app.exec_())
+
+
+# def processing_function(labels):
+#     r,c = labels.shape
+#     l = np.max(labels)+1
+#     label_image = np.zeros((r,c,l))
+#     for k in range(number_repetitions):
+#         for i in range(1,l):
+#             label_image[:,:,i] = (labels == i).astype(float)
+#         D = km_dict.improb_to_dictprob(A, label_image, number_nodes, int_patch_size) # Dictionary
+#         P = km_dict.dictprob_to_improb(A, D, int_patch_size) # Probability map
+#         labels = np.argmax(P,axis=2) # Segmentation
+#     return labels

@@ -11,7 +11,8 @@ import numpy.random
 import scipy.ndimage
 import ctypes
 import numpy.ctypeslib as ctl 
-libfile = 'image_feat_lib.so'
+import os
+libfile = os.path.dirname(__file__) + '/image_feat_lib.so'
 lib = ctypes.cdll.LoadLibrary(libfile)
 
 
