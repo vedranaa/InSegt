@@ -344,38 +344,38 @@ class Annotator(PyQt5.QtWidgets.QWidget):
             self.drawCursorPoint(self.lastCursorPoint)
             self.update()
             self.showInfo(f'Changed pen label to {self.label}')
-        elif event.key()==16777235: # uparrow          
+        elif event.key()==PyQt5.QtCore.Qt.Key_Up: # uparrow          
             self.penWidth = min(self.penWidth+1,50) 
             self.drawCursorPoint(self.lastCursorPoint)
             self.update()
             self.showInfo(f'Changed pen width to {self.penWidth}')
-        elif event.key()==16777237: # downarrow
+        elif event.key()==PyQt5.QtCore.Qt.Key_Down: # downarrow
             self.penWidth = max(self.penWidth-1,1)
             self.drawCursorPoint(self.lastCursorPoint)
             self.update()
             self.showInfo(f'Changed pen widht to {self.penWidth}')
-        elif event.key()==83: # s
+        elif event.key()==PyQt5.QtCore.Qt.Key_S: # s
             self.saveOutcome()
-        elif event.key()==79: # o
+        elif event.key()==PyQt5.QtCore.Qt.Key_O: # o
             self.overlay = (self.overlay+1)%len(self.overlays)
             self.update()
             self.showInfo(f'Changed overlay to {self.overlays[self.overlay]}')
-        elif event.key()==90: # z
+        elif event.key()==PyQt5.QtCore.Qt.Key_Z: # z
             if not self.zPressed:
                 self.showInfo('Zooming enabled')
                 self.zPressed = True
                 self.cursorPix.fill(self.color_picker(label=0, opacity=0)) # clear (fill with transparent)
                 self.update()
-        elif event.key()==72: # h        
+        elif event.key()==PyQt5.QtCore.Qt.Key_H: # h        
             if not self.hPressed:
                 self.hPressed = True
                 self.showHelp()
-        elif event.key()==16777216: # escape
+        elif event.key()==PyQt5.QtCore.Qt.Key_Escape: # escape
             self.closeEvent(event)
         self.setTitle()
         
     def keyReleaseEvent(self, event):
-        if event.key()==90: # z
+        if event.key()==PyQt5.QtCore.Qt.Key_Z: # z
             if not self.activelyZooming:
                 self.drawCursorPoint(self.lastCursorPoint)
                 if self.newZoomValues is None:
@@ -387,7 +387,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
                     self.executeZoom()                       
                 self.update()
             self.zPressed = False
-        elif event.key()==72: # h
+        elif event.key()==PyQt5.QtCore.Qt.Key_H: # h
             self.hideText()
             self.hPressed = False
             

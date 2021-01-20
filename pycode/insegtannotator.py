@@ -84,7 +84,7 @@ class InSegtAnnotator(annotator.Annotator):
         
     def keyPressEvent(self, event):
         """Adding events to annotator"""   
-        if event.key()==73: # i
+        if event.key()==PyQt5.QtCore.Qt.Key_I:
             if self.showImage:          
                 self.showImage = False
                 self.update()
@@ -94,7 +94,7 @@ class InSegtAnnotator(annotator.Annotator):
     
     def keyReleaseEvent(self, event):
         """Adding events to annotator"""   
-        if event.key()==73: # i
+        if event.key()==PyQt5.QtCore.Qt.Key_I: # i
             self.showImage = True
             self.update()
             self.showInfo('Turned on show image')
