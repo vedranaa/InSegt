@@ -221,7 +221,6 @@ class InSegtAnnotator(annotator.Annotator):
     
     
     
-    
 if __name__ == '__main__':    
     
     '''
