@@ -10,13 +10,13 @@ import numpy as np
 import numpy.random
 import scipy.ndimage
 import ctypes
-import numpy.ctypeslib as ctl 
+import numpy.ctypeslib as ctl
 import os
 libfile = os.path.dirname(__file__) + '/image_feat_lib.so'
 lib = ctypes.cdll.LoadLibrary(libfile)
 
 
-def get_feat_vec(image, patch_size, n_train, n_keep = 10):
+def get_feat_vec(I, patch_size, n_train, n_keep = 10):
     '''
     Function to compute PCA features from image patches. Pixels in the image 
     patches are used as feature vectors in a patch_size x patch_size dimensional
@@ -24,8 +24,8 @@ def get_feat_vec(image, patch_size, n_train, n_keep = 10):
 
     Parameters
     ----------
-    image : numpy array
-        2D image with variable number of channels.
+    I : numpy array or list of numpy arrays
+        2D image(s) with variable number of channels.
     patch_size : integer
         Side length of patch.
     n_train : integer
@@ -43,6 +43,10 @@ def get_feat_vec(image, patch_size, n_train, n_keep = 10):
         Mean patch to be used for computing PCA features.
 
     '''
+    if ( isinstance(I, list)):
+        image = np.array(I).transpose(1,2,0)
+    else:
+        image = I
 
     # Extract patches and put a random subset of n_train into an array
     r,c = image.shape[:2]
@@ -77,7 +81,7 @@ def get_feat_vec(image, patch_size, n_train, n_keep = 10):
     # print(vec.dtype)
     
     if (n_keep > 1):
-        n_keep = np.minimum(n_keep,patch_size**2)
+        n_keep = np.minimum(n_keep,l*patch_size**2)
     else:
         v = np.sqrt(val)
         vp = v/np.sum(v)
@@ -119,40 +123,67 @@ def get_im_dev(image, order_keep = (True, True, True), sigma = -1):
         List of image derivatives.
 
     '''
-    I = []
     if ( sigma <= 0 ):
+        # Simple derivative filters
         g = np.array([[1,1,1]])
         dg = np.array([[1,0,-1]])
         ddg = np.array([[1,-2,1]])
-        
-        # image and derivatives
-        if ( order_keep[0] ):
-            I.append(np.asarray(image, order='C'))
-        if ( order_keep[1] ):
-            I.append(np.asarray(scipy.ndimage.convolve(image, dg), order='C')) # Ix
-            I.append(np.asarray(scipy.ndimage.convolve(image, dg.T), order='C')) # Iy
-        if ( order_keep[2] ):
-            I.append(np.asarray(scipy.ndimage.convolve(image, ddg), order='C')) # Ixx
-            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), dg.T), order='C')) # Ixy
-            I.append(np.asarray(scipy.ndimage.convolve(image, ddg.T), order='C')) # Iyy
     else:
         # Gaussian filters
         g, dg, ddg = get_gauss_dev(sigma)
-        if ( order_keep[0] ):
-            I.append(np.asarray(image, order='C'))
-        if ( order_keep[1] ):
-            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), g.T), order='C')) # Ix
-            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, g), dg.T), order='C')) # Iy
-        if ( order_keep[2] ):
-            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, ddg), g.T), order='C')) # Ixx
-            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), dg.T), order='C')) # Ixy
-            I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, g), ddg.T), order='C')) # Iyy
+    
+    I = [] # List of output derivative images
+    if( image.ndim == 2):
+        convolve_append(image, g, dg, ddg, order_keep, I)
+    else:
+        for i in range(0,image.shape[2]):
+            convolve_append(image[:,:,i], g, dg, ddg, order_keep, I)
     # Normalize to have same standard deviation
-    std_im = np.std(image)
+    std_im = np.std(I[0])
     for i in range(0,len(I)):
         I[i] = I[i]*std_im/np.std(I[i])
     return I
+
+def convolve_append(image, g, dg, ddg, order_keep, I):
+    '''
+
+    Parameters
+    ----------
+    image : numpy array
+        2D image.
+    g : numpy array
+        0th order derivative 1D filter.
+    dg : numpy array
+        1th order derivative 1D filter.
+    ddg : numpy array
+        2th order derivative 1D filter.
+    order_keep : tuple of bool, optional
+        Determines if image derivatives should be computed. Derivatives are 
+        computed according to:
+          if order_keep[0] == True then zeroth order image included (original) 
+          if order_keep[1] == True then first order images included (dI/dx and dI/dy) 
+          if order_keep[2] == True then second order image included (d2I/dx2, d2I/(dxdy), d2I/dy2) 
+        The default is (True, True, True).
+    I : List of numpy arrays
+        Image derivatives.
+
+    Returns
+    -------
+    None.
+
+    '''
+    if ( order_keep[0] ):
+        I.append(np.asarray(image, order='C'))
+    if ( order_keep[1] ):
+        I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), g.T), order='C')) # Ix
+        I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, g), dg.T), order='C')) # Iy
+    if ( order_keep[2] ):
+        I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, ddg), g.T), order='C')) # Ixx
+        I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, dg), dg.T), order='C')) # Ixy
+        I.append(np.asarray(scipy.ndimage.convolve(scipy.ndimage.convolve(image, g), ddg.T), order='C')) # Iyy
+    return None
     
+
 
 
 def get_gauss_dev(sigma, size=4):
@@ -230,13 +261,12 @@ def get_pca_feat_im(I, vec, mean_patch, order_keep = (True, True, True)):
     # say which output the function gives
     py_vec_to_feat_im.restype = None
     
-    patch_size = int(np.sqrt(mean_patch[0].shape[0]))
-
     rows, cols = I[0].shape[:2]
     channels = 1
     if ( I[0].ndim == 3 ):
         channels = I[0].shape[2]
     
+    patch_size = int(np.sqrt(mean_patch[0].shape[0]/channels))
     
     # Compute feature vectors
     feat_im = np.array([])
@@ -245,8 +275,6 @@ def get_pca_feat_im(I, vec, mean_patch, order_keep = (True, True, True)):
         vec_in = np.asarray(vec[i].transpose(), order = 'C')
         mean_patch_in = np.asarray(mean_patch[i], order='C')
         n_keep = vec_in.shape[0]
-        # print(f'rows {rows} cols {cols} channels {channels} n_keep {n_keep} patch_size {patch_size}')
-        # print(f'I {I[i].dtype} vec {vec_in.dtype} mean_patch {mean_patch_in.dtype}')
         feat_im_cpp = np.empty((rows, cols, n_keep), dtype=np.float) # will be overwritten
         py_vec_to_feat_im(I[i], rows, cols, channels, vec_in, n_keep, patch_size, mean_patch_in, feat_im_cpp)
         if (feat_im.size == 0):
@@ -343,8 +371,6 @@ def get_pca_feat_slow(I, vec, mean_patch, order_keep = (True, True, True), sigma
     # python function for building km_tree
     py_vec_to_feat_im = lib.vec_to_feat_im_slow
     
-    # extern "C" void vec_to_feat_im(const double *I, int rows, int cols, int channels, const double *vec, int n_keep, int patch_size, const double *mean_patch, double *feat_im) 
-    
     # say which inputs the function expects
     py_vec_to_feat_im.argtypes = [ctl.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"), # Image
                              ctypes.c_int, ctypes.c_int, ctypes.c_int, # rows, cols, channels
@@ -370,8 +396,6 @@ def get_pca_feat_slow(I, vec, mean_patch, order_keep = (True, True, True), sigma
         vec_in = np.asarray(vec[i].transpose(), order = 'C')
         mean_patch_in = np.asarray(mean_patch[i], order='C')
         n_keep = vec_in.shape[0]
-        # print(f'rows {rows} cols {cols} channels {channels} n_keep {n_keep} patch_size {patch_size}')
-        # print(f'I {I[i].dtype} vec {vec_in.dtype} mean_patch {mean_patch_in.dtype}')
         feat_im_cpp = np.empty((n_keep, rows, cols), dtype=np.float) # will be overwritten
         py_vec_to_feat_im(I[i], rows, cols, channels, vec_in, n_keep, patch_size, mean_patch_in, feat_im_cpp)
         if (feat_im.size == 0):

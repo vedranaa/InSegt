@@ -20,15 +20,18 @@ Input:
   patch_size_h : (patch_size-1)/2
   patch : output image patch
 */
-void get_patch(const double *I, int rows, int cols, int r, int c, const double *mean_patch, int patch_size, int patch_size_h, double *patch){
+void get_patch(const double *I, int rows, int cols, int channels, int r, int c, const double *mean_patch, int patch_size, int patch_size_h, double *patch){
     
-    int id, iter = 0;
+    int id, id_j, iter = 0;
 
     for ( int i = r-patch_size_h; i <= r+patch_size_h; i++ ){
-        id = i*cols;
+        id = (i*cols + c - patch_size_h)*channels;
         for ( int j = c-patch_size_h; j <= c+patch_size_h; j++ ){
-            patch[iter] = I[id+j] - mean_patch[iter];
-            iter++;       
+            id_j = 0;
+            for ( int k = 0; k < channels; k++ ){
+                patch[iter] = I[id+id_j++] - mean_patch[iter];
+                iter++;       
+            }
         }
     }
 }
@@ -58,7 +61,7 @@ extern "C" void vec_to_feat_im_old(const double *I, int rows, int cols, int chan
         feat_im[i] = 0;
     }
     
-    double* patch = new double[patch_size*patch_size];
+    double* patch = new double[patch_size*patch_size*channels];
     int id_vec;
     int tot_pix = rows*cols;
     int n_vec = patch_size*patch_size*channels;
@@ -67,7 +70,7 @@ extern "C" void vec_to_feat_im_old(const double *I, int rows, int cols, int chan
         id_pix = (i*cols + patch_size_h)*n_keep;
         for ( int j = patch_size_h; j < cols-patch_size_h; j++ ){
             id_vec = 0;
-            get_patch(I, rows, cols, i, j, mean_patch, patch_size, patch_size_h, patch);
+            get_patch(I, rows, cols, channels, i, j, mean_patch, patch_size, patch_size_h, patch);
             for ( int k = 0; k < n_keep; k++ ){
                 for ( int l = 0; l < n_vec; l++ ){
                     feat_im[id_pix] += vec[id_vec++]*patch[l];
@@ -95,14 +98,15 @@ extern "C" void vec_to_feat_im(const double *I, int rows, int cols, int channels
 {
     
     int patch_size_h = floor( patch_size / 2 ); // half patch size minus 0.5
-        
+//     cout << "rows " << rows << " cols " << cols << " channels " << channels << " n_keep " << n_keep << " patch_size " << patch_size << endl;
+ 
     // Set output memory to zeros
     double* this_feat_im = new double[rows*cols*n_keep];
     for ( int i = 0; i < rows*cols*n_keep; i++ ){
         this_feat_im[i] = 0;
     }
     
-    double* patch = new double[patch_size*patch_size];
+    double* patch = new double[patch_size*patch_size*channels];
     double feat_tmp;
     int id_vec;
     int tot_pix = rows*cols;
@@ -112,7 +116,7 @@ extern "C" void vec_to_feat_im(const double *I, int rows, int cols, int channels
     for ( int i = patch_size_h; i < rows-patch_size_h; i++ ){
         for ( int j = patch_size_h; j < cols-patch_size_h; j++ ){
             id_vec = 0;
-            get_patch(I, rows, cols, i, j, mean_patch, patch_size, patch_size_h, patch);
+            get_patch(I, rows, cols, channels, i, j, mean_patch, patch_size, patch_size_h, patch);
             for ( int k = 0; k < n_keep; k++ ){
                 feat_tmp = 0;
                 for ( int l = 0; l < n_vec; l++ ){
@@ -157,7 +161,7 @@ extern "C" void vec_to_feat_im_slow(const double *I, int rows, int cols, int cha
         feat_im[i] = 0;
     }
     
-    double* patch = new double[patch_size*patch_size];
+    double* patch = new double[patch_size*patch_size*channels];
     int id_vec;
     int tot_pix = rows*cols;
     int n_vec = patch_size*patch_size*channels;
@@ -166,7 +170,7 @@ extern "C" void vec_to_feat_im_slow(const double *I, int rows, int cols, int cha
         for ( int j = patch_size_h; j < cols-patch_size_h; j++ ){
             id_pix = i*cols + j;
             id_vec = 0;
-            get_patch(I, rows, cols, i, j, mean_patch, patch_size, patch_size_h, patch);
+            get_patch(I, rows, cols, channels, i, j, mean_patch, patch_size, patch_size_h, patch);
             for ( int k = 0; k < n_keep; k++ ){
                 for ( int l = 0; l < n_vec; l++ ){
                     feat_im[id_pix] += vec[id_vec++]*patch[l];
