@@ -98,7 +98,7 @@ def get_feat_vec(I, patch_size, n_train, n_keep = 10):
     mean_patch = np.mean(P,axis = 1)
     return vec, mean_patch
 
-def get_im_dev(image, order_keep = (True, True, True), sigma = -1):
+def get_im_dev(image, order_keep = (True, True, True), sigma = -1, norm_fac = None):
     '''
     Computes image derivatives and returns a list of derivatives
 
@@ -140,9 +140,16 @@ def get_im_dev(image, order_keep = (True, True, True), sigma = -1):
             convolve_append(image[:,:,i], g, dg, ddg, order_keep, I)
     # Normalize to have same standard deviation
     std_im = np.std(I[0])
-    for i in range(0,len(I)):
-        I[i] = I[i]*std_im/np.std(I[i])
-    return I
+    
+    if( norm_fac is None ):
+        norm_fac = np.ones(len(I))
+        for i in range(0,len(I)):
+            norm_fac[i] = std_im/np.std(I[i])
+    for im, n in zip(I,norm_fac):
+        im *= n
+    # for i in range(0,len(I)):
+    #     I[i] *= norm_fac[i]
+    return I, norm_fac
 
 def convolve_append(image, g, dg, ddg, order_keep, I):
     '''
@@ -284,7 +291,7 @@ def get_pca_feat_im(I, vec, mean_patch, order_keep = (True, True, True)):
     return feat_im
 
 
-def get_pca_feat(im, patch_size = None, n_train = None, n_keep = None, order_keep = (True, True, True), vec = None, mean_patch = None, sigma = -1):
+def get_pca_feat(im, patch_size = None, n_train = None, n_keep = None, order_keep = (True, True, True), vec = None, mean_patch = None, sigma = -1, norm_fac = None):
     '''
     General function for computing PCA features. If vec and mean_patch is 
     supplied, then these are not computed. Otherwise the vec and mean_patch is 
@@ -327,8 +334,8 @@ def get_pca_feat(im, patch_size = None, n_train = None, n_keep = None, order_kee
 
     '''
 
-    I = get_im_dev(im, order_keep = order_keep, sigma = sigma)
-    if ( vec == None or mean_patch == None ):
+    I, norm_fac = get_im_dev(im, order_keep = order_keep, sigma = sigma, norm_fac = norm_fac)
+    if ( vec is None or mean_patch is None ):
         vec = []
         mean_patch = []
         for im in I:
@@ -336,22 +343,27 @@ def get_pca_feat(im, patch_size = None, n_train = None, n_keep = None, order_kee
             vec.append(vec_tmp)
             mean_patch.append(mean_patch_tmp)
     feat_im = get_pca_feat_im(I, vec, mean_patch, order_keep = order_keep)
-    return feat_im, vec, mean_patch
+    return feat_im, vec, mean_patch, norm_fac
 
 
-
-def get_pca_feat_slow(I, vec, mean_patch, order_keep = (True, True, True), sigma = 1):
+def get_uni_pca_feat(im, patch_size = None, n_train = None, n_keep = None, order_keep = (True, True, True), vec = None, mean_patch = None, sigma = -1, norm_fac = None):
     '''
-    Computes PCA features for an image.
+    General function for computing PCA features. If vec and mean_patch is 
+    supplied, then these are not computed. Otherwise the vec and mean_patch is 
+    initially computed.
 
     Parameters
     ----------
-    I : list of numpy arrays
-        List of image derivatives.
-    vec : numpy array
-        PCA vectors.
-    mean_patch : numpy array
-        Mean patch to be used for computing PCA features.
+    image : numpy array
+        2D image with variable number of channels.
+    patch_size : integer
+        Side length of patch.
+    n_train : integer
+        Number of patches used for training the kmtree. If the number exceeds 
+        the total number of patches in the image, then the trainin is done on 
+        all possible patches from the image.
+    n_keep : integer, optional
+        Number of features to keep for each derivative image. The default is 10.
     order_keep : tuple of bool, optional
         Determines if image derivatives should be computed. Derivatives are 
         computed according to:
@@ -359,6 +371,10 @@ def get_pca_feat_slow(I, vec, mean_patch, order_keep = (True, True, True), sigma
           if order_keep[1] == True then first order images included (dI/dx and dI/dy) 
           if order_keep[2] == True then second order image included (d2I/dx2, d2I/(dxdy), d2I/dy2) 
         The default is (True, True, True).
+    vec : numpy array
+        PCA vectors.
+    mean_patch : numpy array
+        Mean patch to be used for computing PCA features.
     sigma : float
         Standard deviation of Gaussian.
 
@@ -366,40 +382,87 @@ def get_pca_feat_slow(I, vec, mean_patch, order_keep = (True, True, True), sigma
     -------
     feat_im : numpy array
         feature image of size rows x cols x number of features.
+    vec : numpy array
+        PCA vectors.
+    mean_patch : numpy array
+        Mean patch to be used for computing PCA features.
 
     '''
-    # python function for building km_tree
-    py_vec_to_feat_im = lib.vec_to_feat_im_slow
-    
-    # say which inputs the function expects
-    py_vec_to_feat_im.argtypes = [ctl.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"), # Image
-                             ctypes.c_int, ctypes.c_int, ctypes.c_int, # rows, cols, channels
-                             ctl.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"), # eigen vectors
-                             ctypes.c_int, ctypes.c_int,  # n_keep, patch_size
-                             ctl.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"), # mean_patch
-                             ctl.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS")] # feat_image
-    # say which output the function gives
-    py_vec_to_feat_im.restype = None
-    
-    patch_size = int(np.sqrt(mean_patch[0].shape[0]))
 
-    rows, cols = I[0].shape[:2]
-    channels = 1
-    if ( I[0].ndim == 3 ):
-        channels = I[0].shape[2]
+    I, norm_fac = get_im_dev(im, order_keep = order_keep, sigma = sigma, norm_fac = norm_fac)
+    I = [np.asarray(np.asarray(I).transpose(1,2,0), order='C')]
+
+    if ( vec is None or mean_patch is None ):
+        vec = []
+        mean_patch = []
+        for im in I:
+            vec_tmp, mean_patch_tmp = get_feat_vec(im, patch_size, n_train, n_keep)
+            vec.append(vec_tmp)
+            mean_patch.append(mean_patch_tmp)
+    feat_im = get_pca_feat_im(I, vec, mean_patch, order_keep = order_keep)
+    return feat_im, vec, mean_patch, norm_fac
+
+
+# def get_pca_feat_slow(I, vec, mean_patch, order_keep = (True, True, True), sigma = 1):
+#     '''
+#     Computes PCA features for an image.
+
+#     Parameters
+#     ----------
+#     I : list of numpy arrays
+#         List of image derivatives.
+#     vec : numpy array
+#         PCA vectors.
+#     mean_patch : numpy array
+#         Mean patch to be used for computing PCA features.
+#     order_keep : tuple of bool, optional
+#         Determines if image derivatives should be computed. Derivatives are 
+#         computed according to:
+#           if order_keep[0] == True then zeroth order image included (original) 
+#           if order_keep[1] == True then first order images included (dI/dx and dI/dy) 
+#           if order_keep[2] == True then second order image included (d2I/dx2, d2I/(dxdy), d2I/dy2) 
+#         The default is (True, True, True).
+#     sigma : float
+#         Standard deviation of Gaussian.
+
+#     Returns
+#     -------
+#     feat_im : numpy array
+#         feature image of size rows x cols x number of features.
+
+#     '''
+#     # python function for building km_tree
+#     py_vec_to_feat_im = lib.vec_to_feat_im_slow
+    
+#     # say which inputs the function expects
+#     py_vec_to_feat_im.argtypes = [ctl.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"), # Image
+#                              ctypes.c_int, ctypes.c_int, ctypes.c_int, # rows, cols, channels
+#                              ctl.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"), # eigen vectors
+#                              ctypes.c_int, ctypes.c_int,  # n_keep, patch_size
+#                              ctl.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"), # mean_patch
+#                              ctl.ndpointer(ctypes.c_double, flags="C_CONTIGUOUS")] # feat_image
+#     # say which output the function gives
+#     py_vec_to_feat_im.restype = None
+    
+#     patch_size = int(np.sqrt(mean_patch[0].shape[0]))
+
+#     rows, cols = I[0].shape[:2]
+#     channels = 1
+#     if ( I[0].ndim == 3 ):
+#         channels = I[0].shape[2]
     
     
-    # Compute feature vectors
-    feat_im = np.array([])
-    for i in range(0,len(I)):
-        # Get right order for vector and mean patch
-        vec_in = np.asarray(vec[i].transpose(), order = 'C')
-        mean_patch_in = np.asarray(mean_patch[i], order='C')
-        n_keep = vec_in.shape[0]
-        feat_im_cpp = np.empty((n_keep, rows, cols), dtype=np.float) # will be overwritten
-        py_vec_to_feat_im(I[i], rows, cols, channels, vec_in, n_keep, patch_size, mean_patch_in, feat_im_cpp)
-        if (feat_im.size == 0):
-            feat_im = feat_im_cpp.transpose(1,2,0)
-        else:
-            feat_im = np.append(feat_im, feat_im_cpp.transpose(1,2,0), axis = 2)
-    return feat_im
+#     # Compute feature vectors
+#     feat_im = np.array([])
+#     for i in range(0,len(I)):
+#         # Get right order for vector and mean patch
+#         vec_in = np.asarray(vec[i].transpose(), order = 'C')
+#         mean_patch_in = np.asarray(mean_patch[i], order='C')
+#         n_keep = vec_in.shape[0]
+#         feat_im_cpp = np.empty((n_keep, rows, cols), dtype=np.float) # will be overwritten
+#         py_vec_to_feat_im(I[i], rows, cols, channels, vec_in, n_keep, patch_size, mean_patch_in, feat_im_cpp)
+#         if (feat_im.size == 0):
+#             feat_im = feat_im_cpp.transpose(1,2,0)
+#         else:
+#             feat_im = np.append(feat_im, feat_im_cpp.transpose(1,2,0), axis = 2)
+#     return feat_im

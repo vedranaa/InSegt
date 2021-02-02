@@ -11,7 +11,6 @@ import numpy.ctypeslib as ctl
 import numpy as np
 import os
 libfile = os.path.dirname(__file__) + '/km_dict_lib.so'
-print(libfile)
 lib = ctypes.cdll.LoadLibrary(libfile)
 
 

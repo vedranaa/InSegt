@@ -15,7 +15,7 @@ import numpy as np
 import glob
 
 #%% EXAMPLE: nerve fibres
-
+# /Users/abda/Documents/Projects/Code/TextureGUI/InSegt/data/nerve
 in_dir = '../data/nerve/'
 file_names = sorted(glob.glob(in_dir + '*.png'))
 n_im = len(file_names)
@@ -42,7 +42,7 @@ order_keep = (True, True, True)
 image_float = image.astype(np.float)/255
 
 # Compute feature image
-feat_im, vec, mean_patch = feat_seg.get_pca_feat(image_float, patch_size_feat, n_train, n_keep, order_keep, sigma = -1)
+feat_im, vec, mean_patch, norm_fac = feat_seg.get_pca_feat(image_float, patch_size_feat, n_train, n_keep, order_keep, sigma = -1)
 feat_im = np.asarray(feat_im.transpose(2,0,1), order='C')
 
 # Build tree
@@ -86,21 +86,21 @@ import time
 labels = ex.rgbaToLabels(ex.pixmapToArray(ex.annotationPix))
 # Compute dictionary
 segmentation, P_out, D = processing_function(labels)
-
+n_im = 50
 r,c = image.shape
 V = np.empty((r,c,n_im))
 for i in range(0,n_im):
     t = time.time()
     im_in = skimage.io.imread(file_names[i]).astype(np.float)/255
-    feat_im_b = feat_seg.get_pca_feat(im_in, vec = vec, mean_patch = mean_patch, sigma = -1)[0].transpose(2,0,1)# Compute feature image
+    feat_im_b = feat_seg.get_pca_feat(im_in, vec = vec, mean_patch = mean_patch, sigma = -1, norm_fac = norm_fac)[0].transpose(2,0,1)# Compute feature image
     A_b = km_dict.search_km_tree(feat_im_b, T, branching_factor, normalization)[0]
     V[:,:,i] = km_dict.dictprob_to_improb(A_b, D, int_patch_size)[:,:,0]
     print(f'Iteration: {i:03.0f} of {n_im:03.0f} Time {time.time()-t:0.3} sec')
 
 
 fig, ax = plt.subplots(1,2)
-ax[0].imshow(V[:,:,168]<0.5)
-ax[1].imshow(V[:,168,:]<0.5)
+ax[0].imshow(V[:,:,10]<0.5)
+ax[1].imshow(V[:,10,:]<0.5)
 
 #%%
 
@@ -108,11 +108,6 @@ import vizVTK
 vizVTK.visgray((V*255).astype(np.uint8), scalarOpacity = {0: 1.0, 100: 0.001}, 
                gradientOpacity=None, colorTransfer = {0: (0.0, 1.0, 1.0), 255: (1.0, 0.0, 0.0)},
                windowSize = (1600,1600))
-
-
-
-
-
 
 
 

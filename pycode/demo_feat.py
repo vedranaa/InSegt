@@ -46,13 +46,13 @@ normalization = False
 
 patch_size_feat = 5
 n_train = 50000
-n_keep = 10
+n_keep = 25
 order_keep = (True, True, True)
 
 image_float = image.astype(np.float)/255
 
 # Compute feature image
-feat_im, vec, mean_patch = feat_seg.get_pca_feat(image_float, patch_size_feat, n_train, n_keep, order_keep, sigma = -1)
+feat_im, vec, mean_patch, norm_fac = feat_seg.get_uni_pca_feat(image_float, patch_size_feat, n_train, n_keep, order_keep, sigma = -1)
 feat_im = np.asarray(feat_im.transpose(2,0,1), order='C')
 
 # Build tree
