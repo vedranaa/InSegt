@@ -27,10 +27,10 @@ image_gray = image
 #%% EXAMPLE 2:  immunohistochemistry
 
 ## loading image
-print('Loading image')
-image = skimage.data.immunohistochemistry()
-image_gray = (255*skimage.color.rgb2gray(image)).astype('uint8')
-skimage.io.imshow(image)
+# print('Loading image')
+# image = skimage.data.immunohistochemistry()
+# image_gray = (255*skimage.color.rgb2gray(image)).astype('uint8')
+# skimage.io.imshow(image)
 
 #%% COMMON PART
 
