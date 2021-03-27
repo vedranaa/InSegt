@@ -49,6 +49,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
             size = PyQt5.QtCore.QSize(256,256)
         elif type(size) is tuple:
             size = PyQt5.QtCore.QSize(size[0],size[1])
+        self.filename = 'empty.png'
             
         # Pixmap layers
         self.imagePix = PyQt5.QtGui.QPixmap(size.width(), size.height()) 
@@ -129,6 +130,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         imagePix = PyQt5.QtGui.QPixmap(filename)
         annotator = Annotator(imagePix.size())
         annotator.imagePix = imagePix
+        annotator.filename = filename
         return annotator
     
     @classmethod  
@@ -147,6 +149,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         imagePix = PyQt5.QtGui.QPixmap(qimage)
         annotator = Annotator(imagePix.size())
         annotator.imagePix = imagePix
+        annotator.filename = 'from_rgba.png'
         return annotator    
      
     helpText = (
@@ -398,8 +401,9 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         # should also check: https://github.com/spyder-ide/spyder/wiki/How-to-run-PyQt-applications-within-Spyder
    
     def saveOutcome(self):
-        self.annotationPix.save('annotations.png', 'png')
-        self.showInfo('Saved annotations')
+        annotations_filename = self.filename[:-4] + '_annotations.png'
+        self.annotationPix.save(annotations_filename, 'png')
+        self.showInfo(f'Saved annotations as {annotations_filename}')
         
     # colors associated with different labels
     colors = [
