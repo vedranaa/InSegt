@@ -133,7 +133,7 @@ class InSegtAnnotator(annotator.Annotator):
         self.showInfo('Saved annotations and segmentations in various data types')        
     
     helpText = (
-        '<i>Help for InSegt annotator</i> <br>' 
+        '<i>Help for InSegt Annotator</i> <br>' 
         '<b>KEYBOARD COMMANDS:</b> <br>' 
         '&nbsp; &nbsp; <b>1</b> to <b>9</b> changes pen label (L) <br>' 
         '&nbsp; &nbsp; <b>0</b> eraser mode <br>' 
@@ -151,9 +151,9 @@ class InSegtAnnotator(annotator.Annotator):
     @classmethod
     def introText(cls, rich = True):
         if rich:
-            s = "<i>Starting InSegt annotator</i> <br> For help, hit <b>H</b>"
+            s = "<i>Starting InSegt Annotator</i> <br> For help, hit <b>H</b>"
         else:
-            s = "Starting InSegt annotator. For help, hit 'H'."
+            s = "Starting InSegt Annotator. For help, hit 'H'."
         return s        
      
     # for INSEGT, it is IMPORTANT that background is [0,0,0], otherwise rgbToLabels return wrong labels.

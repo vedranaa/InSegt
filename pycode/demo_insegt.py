@@ -46,6 +46,7 @@ def processing_function(labels):
 
 print('Showtime')    
 # showtime
-app = insegtannotator.PyQt5.QtWidgets.QApplication(sys.argv) 
+app = insegtannotator.PyQt5.QtWidgets.QApplication([]) 
 ex = insegtannotator.InSegtAnnotator(image_gray, processing_function)
-sys.exit(app.exec_())  
+app.exec()
+sys.exit()  

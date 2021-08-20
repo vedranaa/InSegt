@@ -310,7 +310,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         # depending on aspect ratios, either pad up and down, or left and rigth
         if zoomWidth > zoomHeight:
             self.zoomFactor = zoomHeight
-            self.padding = PyQt5.QtCore.QPoint((int(self.width() 
+            self.padding = PyQt5.QtCore.QPoint(int((self.width() 
                             - self.source.width()*self.zoomFactor)/2), 0)
         else:
             self.zoomFactor = zoomWidth
@@ -373,8 +373,8 @@ class Annotator(PyQt5.QtWidgets.QWidget):
             if not self.hPressed:
                 self.hPressed = True
                 self.showHelp()
-        elif event.key()==PyQt5.QtCore.Qt.Key_Escape: # escape
-            self.closeEvent(event)
+        # elif event.key()==PyQt5.QtCore.Qt.Key_Escape: # escape
+        #     self.closeEvent()
         self.setTitle()
         
     def keyReleaseEvent(self, event):
@@ -394,11 +394,11 @@ class Annotator(PyQt5.QtWidgets.QWidget):
             self.hideText()
             self.hPressed = False
             
-    def closeEvent(self, event):
-        self.showInfo("Bye, I'm closing")
-        PyQt5.QtWidgets.QApplication.quit()
-        # hint from: https://stackoverflow.com/questions/54045134/pyqt5-gui-cant-be-close-from-spyder
-        # should also check: https://github.com/spyder-ide/spyder/wiki/How-to-run-PyQt-applications-within-Spyder
+    # def closeEvent(self, event):
+    #     self.showInfo("Bye, I'm closing")
+    #     PyQt5.QtWidgets.QApplication.quit()
+    #     # hint from: https://stackoverflow.com/questions/54045134/pyqt5-gui-cant-be-close-from-spyder
+    #     # should also check: https://github.com/spyder-ide/spyder/wiki/How-to-run-PyQt-applications-within-Spyder
    
     def saveOutcome(self):
         self.annotationPix.save(self.annotationsFilename, 'png')
@@ -438,7 +438,8 @@ if __name__ == '__main__':
     image from skimage.data is used.
     '''
        
-    app = PyQt5.QtWidgets.QApplication(sys.argv)
+    app = PyQt5.QtWidgets.QApplication([])
+    
     if len(sys.argv)>1:
          filename = sys.argv[1]
          ex = Annotator.fromFilename(filename)
@@ -450,7 +451,12 @@ if __name__ == '__main__':
          rgba = np.concatenate((rgb, 255 + np.zeros(rgb.shape[0:2]+(1,), 
                                             dtype=np.uint8)), axis=2)
          ex = Annotator.fromRgba(rgba)
-    sys.exit(app.exec_())  
+    
+    # ex.show() is probably better placed here than in init
+    app.exec()
+    
+    #app.quit(), not needed? exec starts the loop which quits when the last top widget is closed  
+    #sys.exit(), not needed?  
     
     
     
