@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 
 
-def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac=None):
+def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac=None, dtype='float32'):
     """Gauss derivative feaures for every image pixel.
     Arguments:
         image: a 2D image, shape (r,c).
@@ -24,8 +24,8 @@ def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac=None):
 
     # Ensure image is float32.
     # This data type is often much faster than float64.
-    if im.dtype != np.float32:
-        im = im.astype(np.float32)
+    if im.dtype != dtype:
+        im = im.astype(dtype)
 
     # Create kernel array.
     s = np.ceil(sigma * 4)
