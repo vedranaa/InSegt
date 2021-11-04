@@ -10,7 +10,13 @@ import cv2
 import numpy as np
 
 
-def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac=None, dtype='float32'):
+def get_gauss_feat_im(
+    im,
+    sigma=1,
+    normalize=True,
+    norm_fac=None,
+    dtype='float32',
+):
     """Gauss derivative feaures for every image pixel.
     Arguments:
         image: a 2D image, shape (r,c).
@@ -97,8 +103,14 @@ def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac=None, dtype='float32
     if normalize:
         if norm_fac is None:
             norm_fac = np.zeros((2, 15), np.float32)
-            norm_fac_mean = np.mean(imfeat, axis=(1, 2), dtype=norm_fac.dtype, out=norm_fac[0])
-            norm_fac_std = np.std(imfeat, axis=(1, 2), dtype=norm_fac.dtype, out=norm_fac[1])
+            norm_fac_mean = np.mean(imfeat,
+                                    axis=(1, 2),
+                                    dtype=norm_fac.dtype,
+                                    out=norm_fac[0])
+            norm_fac_std = np.std(imfeat,
+                                  axis=(1, 2),
+                                  dtype=norm_fac.dtype,
+                                  out=norm_fac[1])
         else:
             norm_fac = np.moveaxis(norm_fac, 0, -1)
         imfeat -= norm_fac_mean[:, np.newaxis, np.newaxis]
@@ -124,15 +136,39 @@ def get_gauss_feat_multi(im, sigma=[1, 2, 4], normalize=True, norm_fac=None):
     Author: abda@dtu.dk, 2021
 
     '''
-    imfeats = []
+
+    if not sigma:
+        raise ValueError('sigma must be a list of numbers')
+
+    imfeats = None
     if norm_fac is None:
         norm_fac = [None] * len(sigma)
     for i in range(0, len(sigma)):
-        feat, norm_fac[i] = get_gauss_feat_im(im, sigma[i], normalize,
-                                              norm_fac[i])
-        imfeats.append(feat)
-    imfeats = np.asarray(imfeats).transpose(1, 2, 3, 0)
+        # Get features.
+        feat, norm_fac[i] = get_gauss_feat_im(
+            im,
+            sigma[i],
+            normalize,
+            norm_fac[i],
+        )
 
+        # Instantiate complete features array on first iteration.
+        # This uses half the memory relative to keeping features in a list
+        # and then copying them to a ndarray afterwards.
+        if imfeats is None:
+            imfeats = np.zeros((len(sigma), ) + feat.shape, dtype=feat.dtype)
+
+        # Insert features into array.
+        imfeats[i] = feat
+
+    # Move sigma dimension last.
+    imfeats = np.moveaxis(imfeats, 0, -1)
+
+    # Get dimensions.
     r, c, nf, ns = imfeats.shape
-    # imfeats = np.asarray(imfeats).transpose(1,0,2)
-    return imfeats.reshape((r, c, nf * ns)), norm_fac
+    # Flatten flatten feature and sigma dimensions.
+    imfeats = imfeats.reshape((r, c, nf * ns))
+    # TODO Consider using np.ascontiguousarray to sort imfeats in memory.
+    # Whether this improves performance depends on subsequent use.
+
+    return imfeats, norm_fac
