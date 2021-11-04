@@ -3,14 +3,14 @@
 """
 Created on Wed Feb 10 21:46:41 2021
 
-@author: abda
+@author: abda, niejep
 """
 
-import numpy as np
-import scipy.ndimage
 import cv2
+import numpy as np
 
-def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac = None):
+
+def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac=None):
     """Gauss derivative feaures for every image pixel.
     Arguments:
         image: a 2D image, shape (r,c).
@@ -21,34 +21,63 @@ def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac = None):
             vector for every image pixel.
     Author: vand@dtu.dk, 2020
     """
-      
-    s = np.ceil(sigma*4)
-    x = np.arange(-s,s+1).reshape((-1,1));
 
-    g = np.exp(-x**2/(2*sigma**2));
-    g /= np.sum(g);
-    dg = -x/(sigma**2)*g;
-    ddg = -1/(sigma**2)*g - x/(sigma**2)*dg;
-    dddg = -2/(sigma**2)*dg - x/(sigma**2)*ddg;
-    ddddg = -2/(sigma**2)*ddg - 1/(sigma**2)*ddg - x/(sigma**2)*dddg;
-    
-    r,c = im.shape
-    imfeat = np.zeros((r,c,15))
-    imfeat[:,:,0] = cv2.filter2D(cv2.filter2D(im,-1,g),-1,g.T)
-    imfeat[:,:,1] = cv2.filter2D(cv2.filter2D(im,-1,dg),-1,g.T)
-    imfeat[:,:,2] = cv2.filter2D(cv2.filter2D(im,-1,g),-1,dg.T)
-    imfeat[:,:,3] = cv2.filter2D(cv2.filter2D(im,-1,ddg),-1,g.T)
-    imfeat[:,:,4] = cv2.filter2D(cv2.filter2D(im,-1,dg),-1,dg.T)
-    imfeat[:,:,5] = cv2.filter2D(cv2.filter2D(im,-1,g),-1,ddg.T)
-    imfeat[:,:,6] = cv2.filter2D(cv2.filter2D(im,-1,dddg),-1,g.T)
-    imfeat[:,:,7] = cv2.filter2D(cv2.filter2D(im,-1,ddg),-1,dg.T)
-    imfeat[:,:,8] = cv2.filter2D(cv2.filter2D(im,-1,dg),-1,ddg.T)
-    imfeat[:,:,9] = cv2.filter2D(cv2.filter2D(im,-1,g),-1,dddg.T)
-    imfeat[:,:,10] = cv2.filter2D(cv2.filter2D(im,-1,ddddg),-1,g.T)
-    imfeat[:,:,11] = cv2.filter2D(cv2.filter2D(im,-1,dddg),-1,dg.T)
-    imfeat[:,:,12] = cv2.filter2D(cv2.filter2D(im,-1,ddg),-1,ddg.T)
-    imfeat[:,:,13] = cv2.filter2D(cv2.filter2D(im,-1,dg),-1,dddg.T)
-    imfeat[:,:,14] = cv2.filter2D(cv2.filter2D(im,-1,g),-1,ddddg.T)
+    # Ensure image is float32.
+    # This data type is often much faster than float64.
+    if im.dtype != np.float32:
+        im = im.astype(np.float32)
+
+    # Create kernel array.
+    s = np.ceil(sigma * 4)
+    x = np.arange(-s, s + 1).reshape((-1, 1))
+
+    # Create Gaussian kernels.
+    g = np.exp(-x**2 / (2 * sigma**2))
+    g /= np.sum(g)
+    g = g.astype(im.dtype)  # Make same type as image.
+    dg = -x / (sigma**2) * g
+    ddg = -1 / (sigma**2) * g - x / (sigma**2) * dg
+    dddg = -2 / (sigma**2) * dg - x / (sigma**2) * ddg
+    ddddg = -2 / (sigma**2) * ddg - 1 / (sigma**2) * ddg - x / (sigma**
+                                                                2) * dddg
+
+    # Create image feature arrays and temporary array. Features are stored
+    # on the first access for fast direct write of values in filter2D.
+    imfeat = np.zeros((15, ) + im.shape, dtype=im.dtype)
+    imfeat_tmp = np.zeros_like(im)
+
+    # Extract features. Order is a bit odd, as original order has been
+    # kept even though calculation order has been updated. We use the tmp
+    # array to store results and avoid redundant calcalations. This
+    # reduces calls to filter2D from 30 to 20. Results are written
+    # directly to the destination array.
+    cv2.filter2D(im, -1, g, dst=imfeat_tmp)
+    cv2.filter2D(imfeat_tmp, -1, g.T, dst=imfeat[0])
+    cv2.filter2D(imfeat_tmp, -1, dg.T, dst=imfeat[2])
+    cv2.filter2D(imfeat_tmp, -1, ddg.T, dst=imfeat[5])
+    cv2.filter2D(imfeat_tmp, -1, dddg.T, dst=imfeat[9])
+    cv2.filter2D(imfeat_tmp, -1, ddddg.T, dst=imfeat[14])
+
+    cv2.filter2D(im, -1, dg, dst=imfeat_tmp)
+    cv2.filter2D(imfeat_tmp, -1, g.T, dst=imfeat[1])
+    cv2.filter2D(imfeat_tmp, -1, dg.T, dst=imfeat[4])
+    cv2.filter2D(imfeat_tmp, -1, ddg.T, dst=imfeat[8])
+    cv2.filter2D(imfeat_tmp, -1, dddg.T, dst=imfeat[13])
+
+    cv2.filter2D(im, -1, ddg, dst=imfeat_tmp)
+    cv2.filter2D(imfeat_tmp, -1, g.T, dst=imfeat[3])
+    cv2.filter2D(imfeat_tmp, -1, dg.T, dst=imfeat[7])
+    cv2.filter2D(imfeat_tmp, -1, ddg.T, dst=imfeat[12])
+
+    cv2.filter2D(im, -1, dddg, dst=imfeat_tmp)
+    cv2.filter2D(imfeat_tmp, -1, g.T, dst=imfeat[6])
+    cv2.filter2D(imfeat_tmp, -1, dg.T, dst=imfeat[11])
+
+    cv2.filter2D(im, -1, ddddg, dst=imfeat_tmp)
+    cv2.filter2D(imfeat_tmp, -1, g.T, dst=imfeat[10])
+
+    # Move axis last again.
+    imfeat = np.moveaxis(imfeat, 0, -1)
 
     # r,c = im.shape
     # imfeat = np.zeros((r,c,15))
@@ -70,15 +99,16 @@ def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac = None):
 
     if normalize:
         if norm_fac is None:
-            norm_fac = np.zeros((15,2))
-            norm_fac[:,0] = np.mean(imfeat,axis=(0,1))
-            norm_fac[:,1] = np.std(imfeat,axis=(0,1))
-        imfeat -= norm_fac[:,0]
-        imfeat /= norm_fac[:,1]
-    
+            norm_fac = np.zeros((15, 2))
+            norm_fac[:, 0] = np.mean(imfeat, axis=(0, 1))
+            norm_fac[:, 1] = np.std(imfeat, axis=(0, 1))
+        imfeat -= norm_fac[:, 0]
+        imfeat /= norm_fac[:, 1]
+
     return imfeat, norm_fac
 
-def get_gauss_feat_multi(im, sigma = [1,2,4], normalize = True, norm_fac = None):
+
+def get_gauss_feat_multi(im, sigma=[1, 2, 4], normalize=True, norm_fac=None):
     '''Multi-scale Gauss derivative feaures for every image pixel.
     Arguments:
         image: a 2D image, shape (r,c).
@@ -93,12 +123,13 @@ def get_gauss_feat_multi(im, sigma = [1,2,4], normalize = True, norm_fac = None)
     '''
     imfeats = []
     if norm_fac is None:
-        norm_fac = [None]*len(sigma)
-    for i in range(0,len(sigma)):
-        feat, norm_fac[i] = get_gauss_feat_im(im, sigma[i], normalize, norm_fac[i])
+        norm_fac = [None] * len(sigma)
+    for i in range(0, len(sigma)):
+        feat, norm_fac[i] = get_gauss_feat_im(im, sigma[i], normalize,
+                                              norm_fac[i])
         imfeats.append(feat)
-    imfeats = np.asarray(imfeats).transpose(1,2,3,0)
-    
-    r,c,nf,ns = imfeats.shape
+    imfeats = np.asarray(imfeats).transpose(1, 2, 3, 0)
+
+    r, c, nf, ns = imfeats.shape
     # imfeats = np.asarray(imfeats).transpose(1,0,2)
-    return imfeats.reshape((r,c,nf*ns)), norm_fac
+    return imfeats.reshape((r, c, nf * ns)), norm_fac
