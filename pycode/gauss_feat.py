@@ -76,9 +76,6 @@ def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac=None):
     cv2.filter2D(im, -1, ddddg, dst=imfeat_tmp)
     cv2.filter2D(imfeat_tmp, -1, g.T, dst=imfeat[10])
 
-    # Move axis last again.
-    imfeat = np.moveaxis(imfeat, 0, -1)
-
     # r,c = im.shape
     # imfeat = np.zeros((r,c,15))
     # imfeat[:,:,0] = scipy.ndimage.gaussian_filter(im,sigma,order=0)
@@ -99,11 +96,17 @@ def get_gauss_feat_im(im, sigma=1, normalize=True, norm_fac=None):
 
     if normalize:
         if norm_fac is None:
-            norm_fac = np.zeros((15, 2))
-            norm_fac[:, 0] = np.mean(imfeat, axis=(0, 1))
-            norm_fac[:, 1] = np.std(imfeat, axis=(0, 1))
-        imfeat -= norm_fac[:, 0]
-        imfeat /= norm_fac[:, 1]
+            norm_fac = np.zeros((2, 15), np.float32)
+            norm_fac_mean = np.mean(imfeat, axis=(1, 2), dtype=norm_fac.dtype, out=norm_fac[0])
+            norm_fac_std = np.std(imfeat, axis=(1, 2), dtype=norm_fac.dtype, out=norm_fac[1])
+        else:
+            norm_fac = np.moveaxis(norm_fac, 0, -1)
+        imfeat -= norm_fac_mean[:, np.newaxis, np.newaxis]
+        imfeat /= norm_fac_std[:, np.newaxis, np.newaxis]
+
+    # Move axis last again.
+    imfeat = np.moveaxis(imfeat, 0, -1)
+    norm_fac = np.moveaxis(norm_fac, 0, -1)
 
     return imfeat, norm_fac
 
