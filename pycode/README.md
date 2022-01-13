@@ -1,6 +1,6 @@
 ## InSegtPy
 
-*An early, not longer maintained, py version of [InSegt](https://github.com/vedranaa/InSegt), newer version got it's own life here: https://github.com/vedranaa/insegtpy*
+*An early, not longer maintained, py version of [InSegt](https://github.com/vedranaa/InSegt), newer and better py version got it's own life here: https://github.com/vedranaa/insegtpy*
 
 Contains:
 
