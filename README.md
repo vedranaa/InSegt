@@ -1,4 +1,5 @@
 # InSegt
+*Matlab version of InSegt, for python version check [InSegtpy](https://github.com/vedranaa/InSegtpy)*
 
 Code accompanying our paper [*Content-based Propagation of User Markings for Interactive Segmentation of Patterned Images*](http://openaccess.thecvf.com/content_CVPRW_2020/papers/w57/Dahl_Content-Based_Propagation_of_User_Markings_for_Interactive_Segmentation_of_Patterned_CVPRW_2020_paper.pdf), published at [CVMI workshop](https://cvmi2020.github.io/) at CVPR 2020. An earlier version of the paper is on arxiv: [1809.02226](https://arxiv.org/pdf/1809.02226.pdf). The CVMI presentation can be seen at the link below. 
 
