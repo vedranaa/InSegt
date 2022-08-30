@@ -36,6 +36,7 @@ class InSegtProbAnnotator(insegtannotator.InSegtAnnotator):
         if(self.showProbabilities>self.probabilities.shape[0]):
             self.showProbabilities = 0
             self.showProbabilityInfo()
+            
 
     def keyPressEvent(self, event):
         """Adding events to annotator"""   
@@ -45,6 +46,7 @@ class InSegtProbAnnotator(insegtannotator.InSegtAnnotator):
             self.showProbabilityInfo()
         else:
             super().keyPressEvent(event)
+
 
     def mouseReleaseEvent(self, event):
         """Segmentation and probabilities are computed on mouse release."""
@@ -59,8 +61,6 @@ class InSegtProbAnnotator(insegtannotator.InSegtAnnotator):
             self.showInfo(f'Showing probability for label {self.showProbabilities}')
 
 
-
-    
     def paintEvent(self, event):
         """ Paint event adds displaying probabilities."""
         if self.showProbabilities>0:
@@ -73,11 +73,13 @@ class InSegtProbAnnotator(insegtannotator.InSegtAnnotator):
                 painter_display.drawPixmap(self.target, self.cursorPix, self.source)
         else:
             super().paintEvent(event)
+            
     
     def updateProbabilityPix(self):
         if(self.showProbabilities>0):
             rgba = self.probabilityToRgba(self.probabilities[self.showProbabilities-1])
             self.probabilityPix = self.rgbaToPixmap(rgba)
+            
     
     @staticmethod
     def probabilityToRgba(probabilityLayer):
@@ -87,6 +89,7 @@ class InSegtProbAnnotator(insegtannotator.InSegtAnnotator):
                                        mask*(1-2*probabilityLayer) + 1,
                                        np.ones(mask.shape)*0.5]).transpose(1,2,0)
         return (255*probabilityColor).astype(np.uint8)
+    
             
 if __name__ == '__main__':    
     
