@@ -151,6 +151,28 @@ class Annotator(PyQt5.QtWidgets.QWidget):
         annotator.imagePix = imagePix
         annotator.annotationsFilename = 'from_rgba_annotations.png'
         return annotator    
+    
+    @classmethod  
+    def fromGrayscale(cls, gray):
+        '''
+        Initializes an Annotator with an image given as an grayscale array.
+
+        Parameters
+        ----------
+        grat : 2D array with dtype uint8.
+
+        '''
+        gray = gray.copy() # check whether needed
+        
+        bytesPerLine = gray.nbytes//gray.shape[0]
+        qimage = PyQt5.QtGui.QImage(gray.data, gray.shape[1], gray.shape[0],
+                                    bytesPerLine,
+                                    PyQt5.QtGui.QImage.Format_Grayscale8)
+        imagePix = PyQt5.QtGui.QPixmap(qimage)
+        annotator = Annotator(imagePix.size())
+        annotator.imagePix = imagePix
+        annotator.annotationsFilename = 'from_grayscale_annotations.png'
+        return annotator    
      
     helpText = (
         '<i>Help for annotator</i> <br>' 
@@ -434,7 +456,7 @@ class Annotator(PyQt5.QtWidgets.QWidget):
 if __name__ == '__main__':
     
     '''
-    Annotator may be used from command-line. If no imagee is given, a test
+    Annotator may be used from command-line. If no image is given, a test
     image from skimage.data is used.
     '''
        
@@ -444,13 +466,8 @@ if __name__ == '__main__':
          filename = sys.argv[1]
          ex = Annotator.fromFilename(filename)
     else:
-         # ex = Annotator()
-         # ex = Annotator((1024,512))   
-         # ex = Annotator.fromFilename('../data/glass.png')
-         rgb = skimage.data.astronaut()
-         rgba = np.concatenate((rgb, 255 + np.zeros(rgb.shape[0:2]+(1,), 
-                                            dtype=np.uint8)), axis=2)
-         ex = Annotator.fromRgba(rgba)
+         image = skimage.data.camera()
+         ex = Annotator.fromGrayscale(image)
     
     # ex.show() is probably better placed here than in init
     app.exec()
